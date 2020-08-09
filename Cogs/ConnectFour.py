@@ -156,6 +156,7 @@ class ConnectFour(commands.Cog):
 
     @tasks.loop( seconds=1.0 )
     async def update(self):
+        #cooldown message
         if len(timer_messages[1])==0:
             return
         for x in range( len( timer_messages[1] ) ):
@@ -218,8 +219,8 @@ async def create_game(ctx,user:User):
     if user.id == ctx.author.id:
         await ctx.send('You can\'t play with yourself {}, find a friend'.format(user.mention))
         return
-
-    message = await ctx.send("{} you were challenged to a game of **Connect Four**! you have **{}s** to react to this messsage".format(user.mention,c4_time))
+    # creating cooldown message
+    message = await ctx.send("{} you were challenged to a game of **Connect Four**! you have **{}s** to react to this message".format(user.mention,c4_time))
     timer_messages[0].append(message)
     timer_messages[1].append(c4_time)
     timer_messages[2].append(user.id)
@@ -242,16 +243,19 @@ def create_embed():
     embed.add_field(name='-', value=embed_desc)
     return embed
 
-
-
-def write_log(string):
+# writes log to .\ConnectFour_Log.txt
+def write_log(string,date=True):
     try:
         f = open('ConnectFour_Log.txt','a+')
-        f.write(print_date(string,print_=False))
+        if date:
+            f.write(print_date(string,print_=False))
+        else:
+            f.write(string)
         f.close()
     except:
         print_date( 'Unexpected error: Could not write error to log file ({})'.format(string) ,error=True)
 
+# adds date before string and prints it
 def print_date(string,print_=True,error=False):
     if error:
         str = '\033[0;31;48m'+datetime.now().strftime("%H:%M:%S")+" "+string+'\033[0;38;48m'
@@ -266,7 +270,6 @@ def setup(client):
 
 class Game:
     def __init__(self,user_A:User,user_B:User,message,embed):
-        global game
         self.user_A = user_A
         self.user_B = user_B
         self.playing_user = None
@@ -274,8 +277,6 @@ class Game:
         self.msg = message
         self.embed = embed
         self.game_field = list()
-
-
 
     async def prepare(self):
 
@@ -296,7 +297,7 @@ class Game:
         await msg.add_reaction('6️⃣')
         await msg.add_reaction('7️⃣')
         await msg.add_reaction('\U0000274C')
-
+        #send messages
         self.playing_user = self.user_A.name if random.randint(0,100) <= 50 else self.user_B.name
         icon = ":yellow_circle:" if self.playing_user == self.user_A.name else ":red_circle:"
         embed.set_field_at(0,name="{}{}'s turn".format(icon,self.playing_user),value=embed.fields[0].value)
@@ -311,7 +312,7 @@ class Game:
 
         game_field = self.game_field
         move = move-1
-
+        # placing circle
         game_length = len(game_field)-1
         for x in range(0,len(game_field)):
             if game_field[game_length-x][move].strip()==':white_large_square:':
@@ -320,20 +321,58 @@ class Game:
                 else:
                     game_field[game_length - x][move] = ':red_circle:'
                 break
-
+        #checking if either of players won
+        count_y = 0
+        count_r = 0
+        for y in range(0,len(game_field[0])):
+            for x in range(0,len(game_field)):
+                if game_field[x][y].strip()==':red_circle:':
+                    count_y+=1
+                    if count_y == 4:
+                        print( "yellow win" )
+                        await self.win(self.user_A if self.last_playing_user == self.user_A else self.user_B)
+                else:
+                    count_y = 0
+                if game_field[x][y].strip()==':yellow_circle:':
+                    count_r+=1
+                    if count_r == 4:
+                        print("red win")
+                        await self.win( self.user_B if self.last_playing_user == self.user_B else self.user_A )
+                else:
+                    count_r = 0
+        # creating embed description from game_field
         embed_desc = ""
         for x in range(len(game_field)):
             for y in range(len(game_field[x])):
                 embed_desc += str(game_field[x][y]).strip()
             embed_desc += '\n'
-
+        # editing message
         self.game_field = game_field
-        icon = ":yellow_circle:" if self.last_playing_user == self.user_A.name else ":red_circle:"
-
+        icon = ":yellow_circle:" if self.last_playing_user != self.user_A.name else ":red_circle:"
         self.playing_user = self.user_A.name if self.last_playing_user == self.user_B.name else self.user_B.name
-        embed.set_field_at(0,name="{}{}'s turn".format(icon,self.playing_user),value=embed_desc)
+        self.embed.set_field_at(0,name="{}{}'s turn".format(icon,self.playing_user),value=embed_desc)
         await self.msg.edit(embed=self.embed)
 
+    async def win(self,user):
+        global games
+        #if user is not in this game, he can't win
+        if user.id != self.user_A.id and user.id != self.user_B.id:
+            write_log(print_date("{}({}) is trying to win in a game he has not entered: games:{}".format(user,user.id,games), error=True),date=False)
+            return
 
-    def get_userA(self):
-        return self.user_A
+        user_lost = self.user_A if user.id == self.user_B.id else self.user_B
+        guild = self.msg.guild
+
+        await self.msg.edit(content="{} won 🎉".format( user.mention ) )
+        await self.msg.channel.send("{} won against {} in a game of Connect Four".format(user.mention,user_lost.mention))
+
+        #removing user from games
+        try:
+            games[guild.id].pop(user.id)
+            print("user_lost.id: {}".format(user_lost.id))
+            games[guild.id].pop(user_lost.id)
+        except:
+            print_date("Unexpected error inside win method, check log for more info",error=True)
+            write_log( traceback.format_exc() )
+
+        print_date("{}({}) won game of Connect Four against {}({}) games:{}".format(user.name,user.mention,user_lost.name,user_lost.mention,games))
