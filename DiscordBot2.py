@@ -6,8 +6,8 @@ client = commands.Bot(command_prefix="%")
 client.remove_command('help')
 players = {}
 
-# Extensions !! MUST BE IN "Cogs" DIRECTORY !!
-extensions = ['Cogs.Utils']
+# Cogs
+extensions = ['Cogs.Utils','Cogs.ConnectFour']
 
 # Settings
 max_purge = 20
