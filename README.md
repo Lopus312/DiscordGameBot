@@ -24,3 +24,6 @@ install python3 (install process is different depending on your OS its version s
 install python3 from there https://www.python.org/downloads/mac-osx/
 
 run ```python3 -m pip install -U discord.py```
+
+# Credits
+[vbe0201](https://gist.github.com/vbe0201) for making [music cog](https://gist.github.com/vbe0201/ade9b80f2d3b64643d854938d40a0a2d)
