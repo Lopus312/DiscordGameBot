@@ -7,7 +7,7 @@ client.remove_command('help')
 players = {}
 
 # Cogs
-extensions = ['Cogs.Utils','Cogs.ConnectFour']
+extensions = ['Cogs.Utils','Cogs.ConnectFour',"Cogs.Music"]
 
 # Settings
 max_purge = 20
@@ -33,13 +33,6 @@ async def purge(ctx, amount=2):
 @client.command(name='ping',brief='Bot replies with his ping', description='Bot will respond with "Pong!" followed by bots latency in *ms* ')
 async def ping(ctx):
     await ctx.send( 'Pong! (%.2fms)' % (client.latency * 1000) )
-
-# Exit
-@commands.has_permissions(administrator=True)
-@client.command(name='stop',brief='stops bot from running',description='Safely closes everything and then reminates bot process')
-async def stop(ctx):
-    await ctx.send( 'Stopping...' )
-    sys.exit()
 
 def isAdmin(ctx):
     for role in ctx.author.roles:
