@@ -94,6 +94,12 @@ class ConnectFour(commands.Cog):
             timer_messages[2].remove( timer_messages[2][ix] )
             timer_messages[3].remove( timer_messages[3][ix] )
 
+            if reaction.message.guild.id in games:
+                if user.id in games[reaction.message.guild.id]:
+                    await ctx.send( "{} You are already in another game".format( user.mention ) )
+                    return
+
+
             #create embed, game and add to games dict
             g_embed = create_embed()
             g_message = await reaction.message.channel.send(embed = g_embed)
@@ -321,25 +327,9 @@ class Game:
                 else:
                     game_field[game_length - x][move] = ':red_circle:'
                 break
-        #checking if either of players won
-        count_y = 0
-        count_r = 0
-        for y in range(0,len(game_field[0])):
-            for x in range(0,len(game_field)):
-                if game_field[x][y].strip()==':red_circle:':
-                    count_y+=1
-                    if count_y == 4:
-                        print( "yellow win" )
-                        await self.win(self.user_A if self.last_playing_user == self.user_A else self.user_B)
-                else:
-                    count_y = 0
-                if game_field[x][y].strip()==':yellow_circle:':
-                    count_r+=1
-                    if count_r == 4:
-                        print("red win")
-                        await self.win( self.user_B if self.last_playing_user == self.user_B else self.user_A )
-                else:
-                    count_r = 0
+
+        await self.check_for_win()
+
         # creating embed description from game_field
         embed_desc = ""
         for x in range(len(game_field)):
@@ -352,6 +342,71 @@ class Game:
         self.playing_user = self.user_A.name if self.last_playing_user == self.user_B.name else self.user_B.name
         self.embed.set_field_at(0,name="{}{}'s turn".format(icon,self.playing_user),value=embed_desc)
         await self.msg.edit(embed=self.embed)
+
+    async def check_for_win(self):
+        game_field = self.game_field
+        player_count = 2
+        scanned_players = 0
+        players = ["red", "yellow"]
+
+        while scanned_players < player_count:
+            player_emote = ":{}_circle:".format( players[scanned_players] )
+            count_horizontal = 0
+            count_vertical = 0
+
+            for x in range( len( game_field ) ):
+                for y in range( len( game_field[x] ) ):
+                    if game_field[x][y].strip() == player_emote:
+                        # Horizontal
+                        count_horizontal += 1
+                        if count_horizontal == 4:
+                            await self.win( self.user_A if scanned_players == 1 else self.user_B )
+                            return
+                        # Vertical
+                        count_vertical += 1
+                        vert_next = x + 1 if x + 1 < len( game_field ) else -1
+                        if vert_next != -1:
+                            for z in range( 0, len( game_field ) ):
+                                if vert_next != -1 and game_field[vert_next][y] == player_emote:
+                                    vert_next = vert_next + 1 if vert_next + 1 < len( game_field ) else -1
+                                    count_vertical += 1
+                                    # Vertical win
+                                    if count_vertical == 4:
+                                        await self.win(self.user_A if scanned_players == 1 else self.user_B)
+                                        return
+                        # Diagonal
+                        count_diagonal_to_right = 1
+                        count_diagonal_to_left = 1
+                        next_y_r = y + 1 if y + 1 < len( game_field[x] ) else -1
+                        next_y_l = y - 1 if y - 1 >= 0 else -1
+                        for z in range( 0, 4 ):
+                            if x+z+1 < len(game_field):
+                                next_x = x+z+1
+                            else:
+                                break
+                            # Diagonal left to right -------->
+                            if next_y_r != -1 and game_field[next_x][next_y_r] == player_emote:
+                                count_diagonal_to_right += 1
+                                next_y_r = next_y_r + 1 if next_y_r + 1 < len( game_field[x] ) else -1
+                                if count_diagonal_to_right == 4:
+                                    await self.win( self.user_A if scanned_players == 1 else self.user_B )
+                                    return
+                            else:
+                                count_diagonal_to_right = 0
+                            # Diagonal right to left <--------
+                            if next_y_l != -1 and game_field[next_x][next_y_l] == player_emote:
+                                count_diagonal_to_left += 1
+                                next_y_l = next_y_l - 1 if next_y_l - 1 >= 0 else -1
+                                if count_diagonal_to_left >= 4:
+                                    await self.win( self.user_A if scanned_players == 1 else self.user_B )
+                                    return
+                            else:
+                                count_diagonal_to_left = 0
+                    else:
+                        count_horizontal = 0
+                    count_vertical = 0
+                count_horizontal = 0
+            scanned_players += 1
 
     async def win(self,user):
         global games
@@ -369,7 +424,6 @@ class Game:
         #removing user from games
         try:
             games[guild.id].pop(user.id)
-            print("user_lost.id: {}".format(user_lost.id))
             games[guild.id].pop(user_lost.id)
         except:
             print_date("Unexpected error inside win method, check log for more info",error=True)
