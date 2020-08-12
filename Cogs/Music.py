@@ -283,6 +283,8 @@ class Music(commands.Cog):
     async def _join(self, ctx: commands.Context):
         """Joins a voice channel."""
 
+        await ctx.voice_state.stop()
+
         destination = ctx.author.voice.channel
         if ctx.voice_state.voice:
             await ctx.voice_state.voice.move_to(destination)
@@ -368,12 +370,17 @@ class Music(commands.Cog):
 
     @commands.command(name='skip')
     async def _skip(self, ctx: commands.Context):
-        """Vote to skip a song. The requester can automatically skip.
+        """Vote to skip a song. The requester or admin can automatically skip.
         3 skip votes are needed for the song to be skipped.
         """
 
         if not ctx.voice_state.is_playing:
             return await ctx.send('Not playing any music right now...')
+
+        for role in ctx.author.roles:
+            if role.permissions.administrator == True:
+                await ctx.message.add_reaction( '⏭' )
+                ctx.voice_state.skip()
 
         voter = ctx.message.author
         if voter == ctx.voice_state.current.requester:
