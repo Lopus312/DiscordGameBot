@@ -29,20 +29,8 @@ class ConnectFour(commands.Cog):
             for y in range( c4_length ):
                 game[x].append( ":white_large_square:" )
 
-    @commands.command()
-    async def connectfour(self,ctx, user: User):
-        await self.create_game(ctx,user)
-
-    @commands.command()
-    async def connect4(self, ctx, user: User):
-        await self.create_game( ctx, user )
-
-    @commands.command()
-    async def c4(self, ctx, user: User):
-        await self.create_game( ctx, user )
-
-    @commands.command()
-    async def cfour(self, ctx, user: User):
+    @commands.command(aliases=['cfour','connect4','connectfour','connect_four'])
+    async def c4(self, ctx, user: User = None):
         await self.create_game( ctx, user )
 
     @commands.command()
@@ -50,22 +38,24 @@ class ConnectFour(commands.Cog):
         # checking whether this channel is allowed to receive game-related commands
         if str( ctx.guild.id ) not in server_settings:
             await main.settings_defaults( ctx.guild.id )
-        if server_settings[str( ctx.guild.id )]["game_channel"] != str( ctx.channel.id ):
+        elif str(server_settings[str( ctx.guild.id )]["game_channel"]) != str( ctx.channel.id ) and server_settings[str( ctx.guild.id )]["game_channel"] != None:
             channel = self.client.get_channel( server_settings[str( ctx.guild.id )]["game_channel"] )
             await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention,channel.mention ) )
             return
 
+        # if author already tried to surrender, surrender instantly if not, send surrender message and add him to he list
         if ctx.author.id in surrender_list[0]:
             await self.surrender_game(ctx.author.id)
-        elif ctx.author.id in games[ctx.message.guild.id]:
+        elif ctx.message.guild.id in games and ctx.author.id in games[ctx.message.guild.id]:
             await ctx.send("{} Do you really want to surrender game of Connect four? type **%surrender** again if you are sure".format(ctx.author.mention))
             surrender_list[0].append(ctx.author.id)
             surrender_list[1].append(ctx.guild.id)
         else:
-            await reaction.message.channel.send("{} Join a game first, before surrendering".format(ctx.author.mention))
+            await ctx.send("{} Join a game first, before surrendering".format(ctx.author.mention))
 
     @commands.Cog.listener()
     async def on_reaction_add(self,reaction,user):
+
         if user.id == self.client.user.id:
             return
 
@@ -81,12 +71,14 @@ class ConnectFour(commands.Cog):
             timer_messages[2].remove( timer_messages[2][ix] )
             timer_messages[3].remove( timer_messages[3][ix] )
             await message.delete()
+            return
 
         # Accepted game - remove countdown messages and create game
         if reaction.emoji == '\U00002705':
             if user.id not in timer_messages[2]:
                 return
             global games
+            # delete countdown message
             ix = timer_messages[2].index( user.id )
             message = timer_messages[0][ix]
             user_A = self.client.get_user(timer_messages[2][ix])
@@ -100,7 +92,6 @@ class ConnectFour(commands.Cog):
                 if user.id in games[reaction.message.guild.id]:
                     await ctx.send( "{} You are already in another game".format( user.mention ) )
                     return
-
 
             #create embed, game and add to games dict
             g_embed = create_embed()
@@ -123,14 +114,17 @@ class ConnectFour(commands.Cog):
 
             await message.delete()
             await game.prepare()
+            return
 
         # surrender game
         if reaction.emoji == '\U0000274C':
             if user.id not in games[reaction.message.guild.id]:
                 return
-            await reaction.message.channel.send("{} Do you really want to surrender game of Connect four? type **%surrender** if you are sure".format(user.mention))
-            surrender_list[0].append(user.id)
-            surrender_list[1].append(reaction.message.guild.id)
+            if user.id not in surrender_list[0]:
+                await reaction.message.channel.send("{} Do you really want to surrender game of Connect four? type **%surrender** if you are sure".format(user.mention))
+                surrender_list[0].append(user.id)
+                surrender_list[1].append(reaction.message.guild.id)
+            return
 
         # 1-7 moves
         if reaction.emoji == '1️⃣':
@@ -161,6 +155,7 @@ class ConnectFour(commands.Cog):
             if user.id not in games[reaction.message.guild.id]:
                 return
             await games[user.guild.id][user.id].play(7,user)
+        await reaction.remove(user)
 
     @tasks.loop( seconds=1.0 )
     async def update(self):
@@ -175,10 +170,13 @@ class ConnectFour(commands.Cog):
                 if timer_messages[1][x] > 1:
                     timer_messages[1][x] -= 1
                 else:
+                    message = timer_messages[0][x]
                     timer_messages[0].remove( timer_messages[0][x] )
                     timer_messages[1].remove( timer_messages[1][x] )
                     timer_messages[2].remove( timer_messages[2][x] )
                     timer_messages[3].remove( timer_messages[3][x] )
+                    await message.delete()
+
 
             except IndexError as e:
                 print_date('IndexError in {}update{} function, will attempt to log to ./ConnectFour_Log.txt: {}'.format('\033[1;31;48m','\033[0;31;48m',e),error=True)
@@ -192,7 +190,7 @@ class ConnectFour(commands.Cog):
         guild = self.client.get_guild(surrender_list[1][surrender_list[0].index(user_id)])
         global games
         game = games[guild.id][user_a.id]
-
+        # Finding 2nd user
         for x in games[guild.id]:
             if game == games[guild.id][x] and x != user_id:
                 user_b = self.client.get_user(x)
@@ -210,13 +208,17 @@ class ConnectFour(commands.Cog):
         print_date("{}({}) surrendered game to {}({}) ( {} )".format(user_a.name,user_a.mention,user_b.name,user_b.mention,games))
 
     async def create_game(self,ctx,user:User):
-        global games,timer_messages
 
+        # If author did not mention user
+        if user == None:
+            await ctx.send("You have to mention someone who you want to play with. \nExample: %c4 {}".format(ctx.author.mention))
+            return
+
+        global games,timer_messages
         # checking whether this channel is allowed to receive game-related commands
         if str(ctx.guild.id) not in server_settings:
             await main.settings_defaults(ctx.guild.id)
-
-        if server_settings[str(ctx.guild.id)]["game_channel"]!=str(ctx.channel.id):
+        elif str(server_settings[str(ctx.guild.id)]["game_channel"])!=str(ctx.channel.id) and server_settings[str( ctx.guild.id )]["game_channel"] != None:
             channel = self.client.get_channel(server_settings[str(ctx.guild.id)]["game_channel"])
             await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention, channel.mention ) )
             return
@@ -230,7 +232,7 @@ class ConnectFour(commands.Cog):
                 await ctx.send( user.name + ' is already in game, wait for him to finish before challenging him' )
                 return
             elif user.bot:
-                await ctx.send('bruh, '+ctx.author.mention+' you can\'t challenge bot. you\'d be crushed and I can\'t allow you that fast defeat ')
+                await ctx.send('bruh, '+ctx.author.mention+' you can\'t challenge a bot. you\'d be crushed and I can\'t allow you that fast defeat ')
                 return
             elif  ctx.author.bot:
                 await ctx.send('??? Bot aganist player?, I want to see that')
@@ -258,6 +260,7 @@ def create_embed():
         for y in range( len( game[x] ) ):
             embed_desc += str(game[x][y]).strip()
         embed_desc += '\n'
+    embed_desc+=':one::two::three::four::five::six::seven:'
     embed.add_field(name='-', value=embed_desc)
     return embed
 
@@ -349,6 +352,7 @@ class Game:
             for y in range(len(game_field[x])):
                 embed_desc += str(game_field[x][y]).strip()
             embed_desc += '\n'
+        embed_desc += ':one::two::three::four::five::six::seven:'
         # editing message
         self.game_field = game_field
         icon = ":yellow_circle:" if self.last_playing_user != self.user_A.name else ":red_circle:"

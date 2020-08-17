@@ -11,8 +11,8 @@ extensions = ['Cogs.Utils','Cogs.ConnectFour',"Cogs.Music"]
 
 # Default Settings
 max_purge = 20
-game_channel = None
-music_channel = None
+game_channel = "None"
+music_channel = "None"
 
 f = open("server_settings.json","r")
 server_settings=json.load(f)
@@ -87,7 +87,7 @@ async def settings_show(ctx):
 
     embed = discord.Embed(
         title='Settings',
-        description='use `settings [name] [value]` to change values. **Channels** accept either channel id\'s, channel names or if it is text channel, mentions. *With id\'s channel finding is faster* so it is recommended for larger servers ',
+        description='use `settings [name] [value]` to change values. **Channels** accept either channel id\'s, channel names or if it is text channel, mentions. Emotes in channel names might result in not finding that channel. If that\'s the case, use id instead. *With id\'s channel finding is faster* so it is recommended for larger servers ',
         color = discord.Colour.blue(),
     )
 
@@ -103,9 +103,9 @@ async def settings_show(ctx):
         server_game_channel = game_channel
         server_music_channel = music_channel
 
-    if server_game_channel != None:
+    if server_game_channel != "None":
         server_game_channel = client.get_channel(server_settings[str(ctx.guild.id)]["game_channel"]).name
-    if server_music_channel != None:
+    if server_music_channel != "None":
         server_music_channel = client.get_channel( server_settings[str(ctx.guild.id)]["music_channel"] ).name
 
     embed.add_field(name='Max_purge = "{}"'.format(server_max_purge),value="Maximum messages that can be removed by `purge` command", inline=False)
@@ -135,6 +135,7 @@ async def settings_edit(ctx,arg,value):
         channel = await get_channel(ctx,value)
         if channel == None:
             await ctx.send("{} {} is not a channel, try again".format(ctx.author.mention,value))
+            return
 
         if arg == 'game_channel':
             if guild_id not in server_settings:
@@ -164,14 +165,14 @@ async def settings_defaults(guild_id):
     dict_music_channel = dict()
     dict_game_channel = dict()
 
-    dict_max_purge["max_purge"] = max_purge
-    dict_music_channel["music_channel"] = music_channel
-    dict_game_channel["game_channel"] = game_channel
+    dict_max_purge["max_purge"] = str(max_purge)
+    dict_music_channel["music_channel"] = str(music_channel)
+    dict_game_channel["game_channel"] = str(game_channel)
 
-    server_settings[guild_id] = dict()
-    server_settings[guild_id] = dict_max_purge
-    server_settings[guild_id].update(dict_music_channel)
-    server_settings[guild_id].update(dict_game_channel)
+    server_settings[str(guild_id)] = dict()
+    server_settings[str(guild_id)] = dict_max_purge
+    server_settings[str(guild_id)].update( dict_game_channel )
+    server_settings[str(guild_id)].update(dict_music_channel)
 
 async def save_settings():
     print_date( "Saving server_settings..." )
@@ -181,15 +182,21 @@ async def save_settings():
     print_date( "Saved server_settings" )
 
 async def get_channel(ctx, string):
-    channel = client.get_channel(string)
+    channel = None
+    try:
+        channel = client.get_channel(int(string))
+    except ValueError:
+        pass
+
     if channel != None:
         return channel
+
 
     if string[0] == "#":
         string = string[1:]
 
     for channel_ in ctx.guild.text_channels:
-        if channel_.name == "bot-test":
+        if str(channel_.name) == string:
             return channel_
     return None
 

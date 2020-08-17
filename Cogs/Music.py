@@ -3,11 +3,14 @@ import functools
 import itertools
 import math
 import random
+import __main__ as main
 
 import discord
 import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
+from __main__ import server_settings
+
 
 class VoiceError(Exception):
     pass
@@ -282,6 +285,8 @@ class Music(commands.Cog):
     @commands.command(name='join', invoke_without_subcommand=True)
     async def _join(self, ctx: commands.Context):
         """Joins a voice channel."""
+        if not await self.check_guild_channel_preference(ctx):
+            return
 
         await ctx.voice_state.stop()
 
@@ -298,6 +303,8 @@ class Music(commands.Cog):
         """Summons the bot to a voice channel.
         If no channel was specified, it joins your channel.
         """
+        if not await self.check_guild_channel_preference(ctx):
+            return
 
         if not channel and not ctx.author.voice:
             raise VoiceError('You are neither connected to a voice channel nor specified a channel to join.')
@@ -309,10 +316,12 @@ class Music(commands.Cog):
 
         ctx.voice_state.voice = await destination.connect()
 
-    @commands.command(name='leave', aliases=['disconnect'])
+    @commands.command(name='leave', aliases=['disconnect','dc'])
     @commands.has_permissions(manage_guild=True)
     async def _leave(self, ctx: commands.Context):
         """Clears the queue and leaves the voice channel."""
+        if not await self.check_guild_channel_preference(ctx):
+            return
 
         if not ctx.voice_state.voice:
             return await ctx.send('Not connected to any voice channel.')
@@ -323,6 +332,8 @@ class Music(commands.Cog):
     @commands.command(name='volume')
     async def _volume(self, ctx: commands.Context, *, volume: int):
         """Sets the volume of the player."""
+        if not await self.check_guild_channel_preference(ctx):
+            return
 
         if not ctx.voice_state.is_playing:
             return await ctx.send('Nothing being played at the moment.')
@@ -336,6 +347,8 @@ class Music(commands.Cog):
     @commands.command(name='now', aliases=['current', 'playing'])
     async def _now(self, ctx: commands.Context):
         """Displays the currently playing song."""
+        if not await self.check_guild_channel_preference(ctx):
+            return
 
         await ctx.send(embed=ctx.voice_state.current.create_embed())
 
@@ -343,6 +356,8 @@ class Music(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def _pause(self, ctx: commands.Context):
         """Pauses the currently playing song."""
+        if not await self.check_guild_channel_preference(ctx):
+            return
 
         if not ctx.voice_state.is_playing and ctx.voice_state.voice.is_playing():
             ctx.voice_state.voice.pause()
@@ -352,6 +367,8 @@ class Music(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def _resume(self, ctx: commands.Context):
         """Resumes a currently paused song."""
+        if not await self.check_guild_channel_preference(ctx):
+            return
 
         if not ctx.voice_state.is_playing and ctx.voice_state.voice.is_paused():
             ctx.voice_state.voice.resume()
@@ -361,6 +378,8 @@ class Music(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def _stop(self, ctx: commands.Context):
         """Stops playing song and clears the queue."""
+        if not await self.check_guild_channel_preference(ctx):
+            return
 
         ctx.voice_state.songs.clear()
 
@@ -373,6 +392,9 @@ class Music(commands.Cog):
         """Vote to skip a song. The requester or admin can automatically skip.
         3 skip votes are needed for the song to be skipped.
         """
+        if not await self.check_guild_channel_preference(ctx):
+            return
+
 
         if not ctx.voice_state.is_playing:
             return await ctx.send('Not playing any music right now...')
@@ -405,6 +427,8 @@ class Music(commands.Cog):
         """Shows the player's queue.
         You can optionally specify the page to show. Each page contains 10 elements.
         """
+        if not await self.check_guild_channel_preference(ctx):
+            return
 
         if len(ctx.voice_state.songs) == 0:
             return await ctx.send('Empty queue.')
@@ -426,6 +450,8 @@ class Music(commands.Cog):
     @commands.command(name='shuffle')
     async def _shuffle(self, ctx: commands.Context):
         """Shuffles the queue."""
+        if not await self.check_guild_channel_preference( ctx ):
+            return
 
         if len(ctx.voice_state.songs) == 0:
             return await ctx.send('Empty queue.')
@@ -436,6 +462,8 @@ class Music(commands.Cog):
     @commands.command(name='remove')
     async def _remove(self, ctx: commands.Context, index: int):
         """Removes a song from the queue at a given index."""
+        if not await self.check_guild_channel_preference( ctx ):
+            return
 
         if len(ctx.voice_state.songs) == 0:
             return await ctx.send('Empty queue.')
@@ -448,6 +476,8 @@ class Music(commands.Cog):
         """Loops the currently playing song.
         Invoke this command again to unloop the song.
         """
+        if not await self.check_guild_channel_preference( ctx ):
+            return
 
         if not ctx.voice_state.is_playing:
             return await ctx.send('Nothing being played at the moment.')
@@ -464,6 +494,9 @@ class Music(commands.Cog):
         This command automatically searches from various sites if no URL is provided.
         A list of these sites can be found here: https://rg3.github.io/youtube-dl/supportedsites.html
         """
+        if not await self.check_guild_channel_preference(ctx):
+            return
+
 
         if not ctx.voice_state.voice:
             await ctx.invoke(self._join)
@@ -478,6 +511,18 @@ class Music(commands.Cog):
 
                 await ctx.voice_state.songs.put(song)
                 await ctx.send('Enqueued {}'.format(str(source)))
+
+    # Check server_settings if this channel can be used for music commands
+    async def check_guild_channel_preference(self, ctx):
+        print(server_settings)
+        print(ctx.channel.id)
+        if str( ctx.guild.id ) not in server_settings:
+            await main.settings_defaults( ctx.guild.id )
+        elif str(server_settings[str( ctx.guild.id )]["music_channel"]) != str( ctx.channel.id ) and server_settings[str( ctx.guild.id )]["music_channel"]!=None:
+            channel = self.bot.get_channel( server_settings[str( ctx.guild.id )]["music_channel"] )
+            await ctx.send( "{} this channel can't be used for music-related commands, try {}".format( ctx.author.mention,channel.mention ) )
+            return False
+        return True
 
     @_join.before_invoke
     @_play.before_invoke
