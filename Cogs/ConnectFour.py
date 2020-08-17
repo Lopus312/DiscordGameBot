@@ -1,7 +1,9 @@
 import discord, traceback, asyncio, random
+import __main__ as main
 from discord.ext import commands, tasks
 from discord import User
 from datetime import datetime
+from __main__ import server_settings
 
 c4_time = 30
 c4_height = 6
@@ -29,30 +31,30 @@ class ConnectFour(commands.Cog):
 
     @commands.command()
     async def connectfour(self,ctx, user: User):
-        await create_game(ctx,user)
+        await self.create_game(ctx,user)
 
     @commands.command()
-    async def ConnectFour(self, ctx, user: User):
-        await create_game( ctx, user )
-
-    @commands.command()
-    async def connectFour(self, ctx, user: User):
-        await create_game( ctx, user )
+    async def connect4(self, ctx, user: User):
+        await self.create_game( ctx, user )
 
     @commands.command()
     async def c4(self, ctx, user: User):
-        await create_game( ctx, user )
+        await self.create_game( ctx, user )
 
     @commands.command()
     async def cfour(self, ctx, user: User):
-        await create_game( ctx, user )
-
-    @commands.command()
-    async def cFour(self, ctx, user: User):
-        await create_game( ctx, user )
+        await self.create_game( ctx, user )
 
     @commands.command()
     async def surrender(self,ctx):
+        # checking whether this channel is allowed to receive game-related commands
+        if str( ctx.guild.id ) not in server_settings:
+            await main.settings_defaults( ctx.guild.id )
+        if server_settings[str( ctx.guild.id )]["game_channel"] != str( ctx.channel.id ):
+            channel = self.client.get_channel( server_settings[str( ctx.guild.id )]["game_channel"] )
+            await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention,channel.mention ) )
+            return
+
         if ctx.author.id in surrender_list[0]:
             await self.surrender_game(ctx.author.id)
         elif ctx.author.id in games[ctx.message.guild.id]:
@@ -207,33 +209,43 @@ class ConnectFour(commands.Cog):
         surrender_list[1].remove( guild.id)
         print_date("{}({}) surrendered game to {}({}) ( {} )".format(user_a.name,user_a.mention,user_b.name,user_b.mention,games))
 
-async def create_game(ctx,user:User):
-    global games,timer_messages
-    # if either of users is already in game, prevent starting another one
-    if ctx.guild.id in games:
-        if ctx.author.id in games[ctx.guild.id]:
-            await ctx.send( ctx.author.mention + ' you are already in game, finish it before starting another one please.' )
-            return
-        elif user.id in games[ctx.guild.id]:
-            await ctx.send( user.name + ' is already in game, wait for him to finish before challenging him' )
-            return
-        elif user.bot:
-            await ctx.send('bruh, '+ctx.author.mention+' you can\'t challenge bot. you\'d be crushed and I can\'t allow you that fast defeat ')
-            return
-        elif  ctx.author.bot:
-            await ctx.send('??? Bot aganist player?, I want to see that')
-    if user.id == ctx.author.id:
-        await ctx.send('You can\'t play with yourself {}, find a friend'.format(user.mention))
-        return
-    # creating cooldown message
-    message = await ctx.send("{} you were challenged to a game of **Connect Four**! you have **{}s** to react to this message".format(user.mention,c4_time))
-    timer_messages[0].append(message)
-    timer_messages[1].append(c4_time)
-    timer_messages[2].append(user.id)
-    timer_messages[3].append(ctx.author.id)
+    async def create_game(self,ctx,user:User):
+        global games,timer_messages
 
-    await message.add_reaction("\U00002705")
-    await message.add_reaction("\U0001F6AB")
+        # checking whether this channel is allowed to receive game-related commands
+        if str(ctx.guild.id) not in server_settings:
+            await main.settings_defaults(ctx.guild.id)
+
+        if server_settings[str(ctx.guild.id)]["game_channel"]!=str(ctx.channel.id):
+            channel = self.client.get_channel(server_settings[str(ctx.guild.id)]["game_channel"])
+            await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention, channel.mention ) )
+            return
+
+        # if either of users is already in game, prevent starting another one
+        if ctx.guild.id in games:
+            if ctx.author.id in games[ctx.guild.id]:
+                await ctx.send( ctx.author.mention + ' you are already in game, finish it before starting another one please.' )
+                return
+            elif user.id in games[ctx.guild.id]:
+                await ctx.send( user.name + ' is already in game, wait for him to finish before challenging him' )
+                return
+            elif user.bot:
+                await ctx.send('bruh, '+ctx.author.mention+' you can\'t challenge bot. you\'d be crushed and I can\'t allow you that fast defeat ')
+                return
+            elif  ctx.author.bot:
+                await ctx.send('??? Bot aganist player?, I want to see that')
+        if user.id == ctx.author.id:
+            await ctx.send('You can\'t play with yourself {}, find a friend'.format(user.mention))
+            return
+        # creating cooldown message
+        message = await ctx.send("{} you were challenged to a game of **Connect Four**! you have **{}s** to react to this message".format(user.mention,c4_time))
+        timer_messages[0].append(message)
+        timer_messages[1].append(c4_time)
+        timer_messages[2].append(user.id)
+        timer_messages[3].append(ctx.author.id)
+
+        await message.add_reaction("\U00002705")
+        await message.add_reaction("\U0001F6AB")
 
 def create_embed():
     global game
@@ -261,6 +273,7 @@ def write_log(string,date=True):
     except:
         print_date( 'Unexpected error: Could not write error to log file ({})'.format(string) ,error=True)
 
+# adds date before string and prints it
 # adds date before string and prints it
 def print_date(string,print_=True,error=False):
     if error:
