@@ -131,31 +131,38 @@ class ConnectFour(commands.Cog):
             if user.id not in games[reaction.message.guild.id]:
                 return
             await games[user.guild.id][user.id].play(1,user)
+            await reaction.remove( user )
         if reaction.emoji == '2️⃣':
             if user.id not in games[reaction.message.guild.id]:
                 return
             await games[user.guild.id][user.id].play(2,user)
+            await reaction.remove( user )
         if reaction.emoji == '3️⃣':
             if user.id not in games[reaction.message.guild.id]:
                 return
             await games[user.guild.id][user.id].play(3,user)
+            await reaction.remove( user )
         if reaction.emoji == '4️⃣':
             if user.id not in games[reaction.message.guild.id]:
                 return
             await games[user.guild.id][user.id].play(4,user)
+            await reaction.remove( user )
         if reaction.emoji == '5️⃣':
             if user.id not in games[reaction.message.guild.id]:
                 return
             await games[user.guild.id][user.id].play(5,user)
+            await reaction.remove( user )
         if reaction.emoji == '6️⃣':
             if user.id not in games[reaction.message.guild.id]:
                 return
             await games[user.guild.id][user.id].play(6,user)
+            await reaction.remove( user )
         if reaction.emoji == '7️⃣':
             if user.id not in games[reaction.message.guild.id]:
                 return
             await games[user.guild.id][user.id].play(7,user)
-        await reaction.remove(user)
+            await reaction.remove( user )
+
 
     @tasks.loop( seconds=1.0 )
     async def update(self):
@@ -299,7 +306,7 @@ class Game:
         self.msg = message
         self.embed = embed
         self.game_field = list()
-        
+
     async def prepare(self):
 
         # prepare field
