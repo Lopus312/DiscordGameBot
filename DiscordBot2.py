@@ -38,6 +38,7 @@ def print_date(string,print_=True,error=False,log=False):
 @client.event
 async def on_ready():
     print_date('Logged in as {0.user}'.format( client ),log=True)
+    await client.change_presence(status=discord.Status.idle,activity=discord.CustomActivity(name="I'm alive"))
     update.start()
 
 # removes specified number of messages
@@ -215,9 +216,9 @@ async def help(ctx):
         print_date("Cannot get bot's avatar",error=True)
         helpEmbed.set_author( name=client.user.name, icon_url=discord.Embed.Empty )
 
-    helpEmbed.add_field(name="Games",value="`connectfour`")
-    helpEmbed.add_field(name="Music",value="`play [title]` `skip` `queue` `join` `summon [channel]` `leave` `now` `pause` `resume` `stop` `shuffle` `remove [index]`")
-    helpEmbed.add_field(name="Other",value="`settings` `ping` `purge [amount]` `flip`")
+    helpEmbed.add_field(name=":game_die:Games",value="`connectfour`")
+    helpEmbed.add_field(name=":notes:Music",value="`play [title]` `skip` `queue` `join` `summon [channel]` `leave` `now` `pause` `resume` `stop` `shuffle` `remove [index]`")
+    helpEmbed.add_field(name=":jigsaw:Other",value="`settings` `ping` `purge [amount]` `flip`")
     helpEmbed.set_footer(text="author: Lopus312")
 
     await ctx.send(embed=helpEmbed)

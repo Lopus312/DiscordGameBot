@@ -211,7 +211,7 @@ class ConnectFour(commands.Cog):
 
         # If author did not mention user
         if user == None:
-            await ctx.send("You have to mention someone who you want to play with. \nExample: %c4 {}".format(ctx.author.mention))
+            await ctx.send("You have to mention someone who you want to play with. \nExample: **%c4 {}**".format(ctx.author.mention))
             return
 
         global games,timer_messages
@@ -299,7 +299,7 @@ class Game:
         self.msg = message
         self.embed = embed
         self.game_field = list()
-
+        
     async def prepare(self):
 
         # prepare field
@@ -329,22 +329,41 @@ class Game:
         if user.name != self.playing_user:
             return
 
-        self.last_playing_user = self.playing_user
-        self.playing_user = None
-
         game_field = self.game_field
         move = move-1
+        move_ = None
+        game_length = len( game_field ) - 1
+
+        # replacing colored squares
+        for x in range(0,len(game_field)):
+            for y in range(len(game_field[x])):
+                if game_field[x][y]==':yellow_square:':
+                    game_field[x][y]=':yellow_circle:'
+                elif game_field[x][y]==':red_square:':
+                    game_field[x][y] = ':red_circle:'
         # placing circle
-        game_length = len(game_field)-1
         for x in range(0,len(game_field)):
             if game_field[game_length-x][move].strip()==':white_large_square:':
-                if self.last_playing_user == self.user_A.name:
+                if self.playing_user == self.user_A.name:
                     game_field[game_length-x][move]=':yellow_circle:'
+                    move_ = [game_length-x,move]
                 else:
                     game_field[game_length - x][move] = ':red_circle:'
+                    move_ = [game_length-x,move]
                 break
 
+        if move_ == None:
+            return
+
         await self.check_for_win()
+
+        if self.playing_user == self.user_A.name:
+            game_field[move_[0]][move_[1]] = ':yellow_square:'
+        else:
+            game_field[move_[0]][move_[1]] = ':red_square:'
+
+        self.last_playing_user = self.playing_user
+        self.playing_user = None
 
         # creating embed description from game_field
         embed_desc = ""
@@ -435,6 +454,12 @@ class Game:
         user_lost = self.user_A if user.id == self.user_B.id else self.user_B
         guild = self.msg.guild
 
+        # remove reactions from embed
+
+        for reaction in self.msg.reactions:
+            print(reaction)
+            await reaction.clear()
+
         await self.msg.edit(content="{} won 🎉".format( user.mention ) )
         await self.msg.channel.send("{} won against {} in a game of Connect Four".format(user.mention,user_lost.mention))
 
@@ -446,4 +471,4 @@ class Game:
             print_date("Unexpected error inside win method, check log for more info",error=True)
             write_log( traceback.format_exc() )
 
-        print_date("{}({}) won game of Connect Four against {}({}) games:{}".format(user.name,user.mention,user_lost.name,user_lost.mention,games))
+        print_date("{}({}) won game of Connect Four against {}({}) games:{}".format(user.name,user.id,user_lost.name,user_lost.id,games))
