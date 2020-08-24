@@ -451,6 +451,25 @@ class Game:
                 count_horizontal = 0
             scanned_players += 1
 
+        # check if there are turns available
+        for x in range( len( game_field ) ):
+            for y in range( len( game_field[x] ) ):
+                if game_field[x][y].strip() == ":white_large_square:":
+                    return
+        await self.draw()
+
+    async def draw(self):
+        guild = self.msg.guild
+        await self.msg.edit( content=":game_die: {} drew against {}".format( self.user_A.mention, self.user_B.mention ) )
+        await self.msg.channel.send("{} and {} drew game of Connect Four".format(  self.user_A.mention,  self.user_B.mention ) )
+
+        try:
+            games[guild.id].pop(self.user_A.id)
+            games[guild.id].pop(self.user_B.id)
+        except:
+            print_date("Unexpected error inside draw method, check log for more info",error=True)
+            write_log( traceback.format_exc() )
+
     async def win(self,user):
         global games
         #if user is not in this game, he can't win
@@ -460,12 +479,6 @@ class Game:
 
         user_lost = self.user_A if user.id == self.user_B.id else self.user_B
         guild = self.msg.guild
-
-        # remove reactions from embed
-
-        for reaction in self.msg.reactions:
-            print(reaction)
-            await reaction.clear()
 
         await self.msg.edit(content="{} won 🎉".format( user.mention ) )
         await self.msg.channel.send("{} won against {} in a game of Connect Four".format(user.mention,user_lost.mention))

@@ -6,3 +6,4 @@ idk.py
 TOKEN.txt
 *.pyc
 DiscordBot2_Log.txt
+server_settings.json
