@@ -48,7 +48,7 @@ async def on_ready():
 
 # removes specified number of messages
 @commands.has_permissions(manage_messages=True)
-@client.command(name='purge',brief='removes last two messages, optional one argument specifying number of messages (%purge 5)',description='by default, removes last two messages. Can be used with argument specifying how many messages should be deleted (ex. "%purge 5" will remove last 5 messages). Keep in mind that command it self is message')
+@client.command(name='purge',aliases=['delete'],brief='removes last two messages, optional one argument specifying number of messages (%purge 5)',description='by default, removes last two messages. Can be used with argument specifying how many messages should be deleted (ex. "%purge 5" will remove last 5 messages). Keep in mind that command it self is message')
 async def purge(ctx, amount:int=2):
     if not isAdmin(ctx):
         await ctx.send("{} sorry, but you are not admin so you can't do that".format(ctx.author.mention))
@@ -79,7 +79,7 @@ async def save(ctx):
         await save_settings()
         await ctx.send( "Settings force-saved" )
 
-@client.command()
+@client.command(aliases=['preferences','prefs','setup'])
 async def settings(ctx,*args):
     if not isAdmin(ctx):
         return
