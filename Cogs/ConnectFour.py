@@ -260,7 +260,7 @@ def create_embed():
     global game
     embed = discord.Embed(
         title = embed_title,
-        color = embed_color,
+        color = discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255)),
     )
     embed_desc = ""
     for x in range( len( game ) ):
