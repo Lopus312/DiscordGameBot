@@ -1,29 +1,27 @@
 # DiscordGameBot
 Multi-functional Discord bot for many things, I use him primarily to learn python and working with API's. But if you'd like any of the features separately or anything else, feel free to download the source code
 
+| Command | Aliases | Description |
+| --- | --- | --- |
+| `connectfour <user mention>` | `c4` `cfour` `connect4` `connect_four` | Creates a game of [Connect Four](https://en.wikipedia.org/wiki/Connect_Four) |
+| `ping` | None | Bot will respond with his latency |
+| `flip` | None | Bot will repond with either "Head" or "Tails", there is 50/50 chance on both of them|
+| `settings` | `preferences` `prefs` `setup` | Administrator-only command. Opens settings menu where you can select which channel will be user for game-commands etc. |
+| `purge [amount=2]` | `delete` | Administrator-only command. Deletes the specified number of messages from channel where this message was sent (default=2)|
+
 ## Hosting by yourself
+### Requirements
+python3.5.3 or higher, [discord.py](https://github.com/Rapptz/discord.py)
 
-### Windows (tested)
-to host bot on your computer/server you'll need python3 installed 
+### Hosting
 
-https://www.python.org/downloads/
+```
+# Windows
+py DiscordBot2.py
 
-then after system reboot you'll need to install Discord.py
-
-```py -3 -m pip install -U discord.py```
-
-after that you are ready to go!
-open cmd in directory you have downloaded this bot and enter
-
-```python3 DiscordBot2.py```
-### Linux (tested)
-install python3 (install process is different depending on your OS its version so use google)
-
-```python3 -m pip install -U discord.py```
-### Mac
-install python3 from there https://www.python.org/downloads/mac-osx/
-
-run ```python3 -m pip install -U discord.py```
+# Linux/Mac
+python3 DiscordBot2.py
+```
 
 # Credits
 [vbe0201](https://gist.github.com/vbe0201) for making [music cog](https://gist.github.com/vbe0201/ade9b80f2d3b64643d854938d40a0a2d)
