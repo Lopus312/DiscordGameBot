@@ -7,7 +7,7 @@ client.remove_command('help')
 players = {}
 
 # Cogs
-extensions = ['Cogs.Utils','Cogs.ConnectFour',"Cogs.Music","Cogs.LevelSystem"]
+extensions = ['Cogs.Utils','Cogs.ConnectFour',"Cogs.Music"]
 
 # Default Settings
 max_purge = 20
