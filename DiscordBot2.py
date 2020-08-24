@@ -1,4 +1,4 @@
-import discord, sys, os, traceback,json
+import discord, sys, os, traceback,json, random
 from discord.ext import commands,tasks
 from datetime import datetime
 
@@ -7,7 +7,7 @@ client.remove_command('help')
 players = {}
 
 # Cogs
-extensions = ['Cogs.Utils','Cogs.ConnectFour',"Cogs.Music"]
+extensions = ['Cogs.Utils','Cogs.ConnectFour',"Cogs.Music","Cogs.LevelSystem"]
 
 # Default Settings
 max_purge = 20
@@ -18,21 +18,26 @@ f = open("server_settings.json","r")
 server_settings=json.load(f)
 f.close()
 
-def print_date(string,print_=True,error=False,log=False):
+def print_date(string:str,print_=True,error=False,log=False):
+    date = datetime.now().strftime("%H:%M:%S")
+
     if log:
         try:
             f = open( 'DiscordBot2_Log.txt', 'a+' )
-            f.write("\n"+datetime.now().strftime("%H:%M:%S")+" "+string)
+            if error:
+                f.write('\n{} {}\nTraceback:{}'.format(date,string,traceback.format_exc()))
+            else:
+                f.write( '\n{} {}'.format( date, string) )
             f.close()
         except:
             print_date('Unexpected error: Could not write error to log file ({})'.format( string ), error=True )
     if error:
-        str = '\033[0;31;48m'+datetime.now().strftime("%H:%M:%S")+" "+string+'\033[0;38;48m'
+        str_ = '\033[0;31;48m{} {}\033[0;38;48m'.format(date,string)
     else:
-        str = datetime.now().strftime( "%H:%M:%S" ) + " " + string
+        str_ = '{} {}'.format(date,string)
     if print_:
-        print(str)
-    return str
+        print(str_)
+    return str_
 
 # message on bot start
 @client.event
@@ -44,7 +49,7 @@ async def on_ready():
 # removes specified number of messages
 @commands.has_permissions(manage_messages=True)
 @client.command(name='purge',brief='removes last two messages, optional one argument specifying number of messages (%purge 5)',description='by default, removes last two messages. Can be used with argument specifying how many messages should be deleted (ex. "%purge 5" will remove last 5 messages). Keep in mind that command it self is message')
-async def purge(ctx, amount=2):
+async def purge(ctx, amount:int=2):
     if not isAdmin(ctx):
         await ctx.send("{} sorry, but you are not admin so you can't do that".format(ctx.author.mention))
         return
@@ -182,20 +187,20 @@ async def save_settings():
     f.close()
     print_date( "Saved server_settings" )
 
+# Attempt to get channel from string
 async def get_channel(ctx, string):
     channel = None
+    # Try if string is channel id
     try:
         channel = client.get_channel(int(string))
     except ValueError:
         pass
-
     if channel != None:
         return channel
-
-
+    # Try if string is channel mention
     if string[0] == "#":
         string = string[1:]
-
+    # Try if string is channel name
     for channel_ in ctx.guild.text_channels:
         if str(channel_.name) == string:
             return channel_
@@ -206,7 +211,7 @@ async def help(ctx):
 
     helpEmbed = discord.Embed(
         title='Game bot',
-        description='Discord bot that you can use to play game of Connect 4. It is recommended for you to look at `settings` command first before using this bot (only administrator can use it). This bot also has implemented audio playing from youtube, but this feature is buggy and not primary function of this bot.',
+        description='Discord bot that you can use to play game of Connect 4. It is recommended for you to look at `settings` command first before using this bot (only administrator can use it). Argument inside `<>` means that it is required, inside `[]` is optional argument. This bot also has implemented audio playing from youtube, but this feature is buggy and not primary function of this bot.',
         color=discord.Colour.blue(),
     )
 
@@ -216,9 +221,9 @@ async def help(ctx):
         print_date("Cannot get bot's avatar",error=True)
         helpEmbed.set_author( name=client.user.name, icon_url=discord.Embed.Empty )
 
-    helpEmbed.add_field(name=":game_die:Games",value="`connectfour`")
-    helpEmbed.add_field(name=":notes:Music",value="`play [title]` `skip` `queue` `join` `summon [channel]` `leave` `now` `pause` `resume` `stop` `shuffle` `remove [index]`")
-    helpEmbed.add_field(name=":jigsaw:Other",value="`settings` `ping` `purge [amount]` `flip`")
+    helpEmbed.add_field(name=":game_die:Games",value="`connectfour <user mention>` `profile [user mention]`")
+    helpEmbed.add_field(name=":notes:Music",value="`play <title>` `skip` `queue [page]` `join` `summon [channel]` `leave` `loop` `now` `pause` `resume` `stop` `shuffle` `remove <index>`")
+    helpEmbed.add_field(name=":jigsaw:Other",value="`settings` `ping` \n`purge [amount]` `flip`")
     helpEmbed.set_footer(text="author: Lopus312")
 
     await ctx.send(embed=helpEmbed)
@@ -227,7 +232,16 @@ async def help(ctx):
 async def update():
     await save_settings()
 
-
+@client.event
+async def on_command_error(ctx,error):
+    # Command not found
+    if isinstance(error,commands.errors.CommandNotFound):
+        print_date(error,error=True)
+        await ctx.send('This command does not exist, try `%help` for a list of available commands')
+        return
+    # Every other error
+    print_date('Command error({}):{}'.format(type(error),error),error=True,log=True)
+    await ctx.send(error)
 
 # Loading all the cogs
 if __name__ == '__main__':
