@@ -43,7 +43,7 @@ def print_date(string:str,print_=True,error=False,log=False):
 @client.event
 async def on_ready():
     print_date('Logged in as {0.user}'.format( client ),log=True)
-    await client.change_presence(status=discord.Status.idle,activity=discord.CustomActivity(name="I'm alive"))
+    await client.change_presence(status=discord.Status.online,activity=discord.Game('Raid shadow legends'))
     update.start()
 
 # removes specified number of messages
