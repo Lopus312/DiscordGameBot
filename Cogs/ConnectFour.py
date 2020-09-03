@@ -207,7 +207,7 @@ class ConnectFour(commands.Cog):
             main.print_date("Connect Four: User_b not found after surrendering", error=True)
             return
 
-        Stats.surrender(StatEdit,guild, [user_a,user_b])
+        Stats.surrender(Stats,guild, [user_a,user_b])
 
         await game.msg.edit(content="{} surrendered 🏳️".format( user_a.mention ) )
         await game.msg.channel.send("{} surrendered a game againist {}".format(user_a.mention,user_b.mention))
