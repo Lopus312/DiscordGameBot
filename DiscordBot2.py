@@ -19,11 +19,15 @@ if os.path.exists("server_settings.json"):
     f = open("server_settings.json","r")
     server_settings=json.load(f)
     f.close()
+else:
+    server_settings = dict()
 
 if os.path.exists("stats.json"):
     f = open("stats.json","r")
     Stats.set_stat_dict(Stats,json.load(f))
     f.close()
+else:
+    Stats.set_stat_dict(dict())
 
 def print_date(string:str,print_=True,error=False,log=False):
     date = datetime.now().strftime("%H:%M:%S")

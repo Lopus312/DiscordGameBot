@@ -78,7 +78,7 @@ class Stats(commands.Cog):
             return True
         elif str(server_settings[str(guild.id)]["game_channel"])!=str(channel.id) and server_settings[str( guild.id )]["game_channel"] != None:
             # return channel where game-related commands are allowed
-            return self.client.get_channel(server_settings[str(guild.id)]["game_channel"])
+            return True if self.client.get_channel(server_settings[str(guild.id)]["game_channel"]) == None else self.client.get_channel(server_settings[str(guild.id)]["game_channel"])
         return True
 
 def setup(client):

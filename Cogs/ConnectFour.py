@@ -37,12 +37,14 @@ class ConnectFour(commands.Cog):
     @commands.command()
     async def surrender(self,ctx):
         # checking whether this channel is allowed to receive game-related commands
+        print(server_settings)
         if str( ctx.guild.id ) not in server_settings:
             await main.settings_defaults( ctx.guild.id )
         elif str(server_settings[str( ctx.guild.id )]["game_channel"]) != str( ctx.channel.id ) and server_settings[str( ctx.guild.id )]["game_channel"] != None:
             channel = self.client.get_channel( server_settings[str( ctx.guild.id )]["game_channel"] )
-            await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention,channel.mention ) )
-            return
+            if channel != None:
+                await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention,channel.mention ) )
+                return
 
         # if author already tried to surrender, surrender instantly if not, send surrender message and add him to he list
         if ctx.author.id in surrender_list[0]:
@@ -223,15 +225,16 @@ class ConnectFour(commands.Cog):
         if user == None:
             await ctx.send("You have to mention someone who you want to play with. \nExample: **%c4 {}**".format(ctx.author.mention))
             return
-
+        print(server_settings)
         global games,timer_messages
         # checking whether this channel is allowed to receive game-related commands
         if str(ctx.guild.id) not in server_settings:
             await main.settings_defaults(ctx.guild.id)
         elif str(server_settings[str(ctx.guild.id)]["game_channel"])!=str(ctx.channel.id) and server_settings[str( ctx.guild.id )]["game_channel"] != None:
             channel = self.client.get_channel(server_settings[str(ctx.guild.id)]["game_channel"])
-            await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention, channel.mention ) )
-            return
+            if channel != None:
+                await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention, channel.mention ) )
+                return
 
         # if either of users is already in game, prevent starting another one
         if ctx.guild.id in games:
