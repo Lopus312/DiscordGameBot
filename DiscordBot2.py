@@ -1,22 +1,29 @@
 import discord, sys, os, traceback,json, random
 from discord.ext import commands,tasks
 from datetime import datetime
+from Cogs.Classes.Stats import Stats as Stats
 
 client = commands.Bot(command_prefix="%", case_insensitive=True)
 client.remove_command('help')
 players = {}
 
 # Cogs
-extensions = ['Cogs.Utils','Cogs.ConnectFour',"Cogs.Music","Cogs.LevelSystem"]
+extensions = ['Cogs.Utils','Cogs.ConnectFour',"Cogs.Music","Cogs.Stats"]
 
 # Default Settings
 max_purge = 20
 game_channel = "None"
 music_channel = "None"
 
-f = open("server_settings.json","r")
-server_settings=json.load(f)
-f.close()
+if os.path.exists("server_settings.json"):
+    f = open("server_settings.json","r")
+    server_settings=json.load(f)
+    f.close()
+
+if os.path.exists("stats.json"):
+    f = open("stats.json","r")
+    Stats.set_stat_dict(Stats,json.load(f))
+    f.close()
 
 def print_date(string:str,print_=True,error=False,log=False):
     date = datetime.now().strftime("%H:%M:%S")
@@ -43,7 +50,7 @@ def print_date(string:str,print_=True,error=False,log=False):
 @client.event
 async def on_ready():
     print_date('Logged in as {0.user}'.format( client ),log=True)
-    await client.change_presence(status=discord.Status.idle,activity=discord.CustomActivity(name="I'm alive"))
+    await client.change_presence(status=discord.Status.online,activity=discord.Game("Raid shadow legends"))
     update.start()
 
 # removes specified number of messages
@@ -181,11 +188,14 @@ async def settings_defaults(guild_id):
     server_settings[str(guild_id)].update(dict_music_channel)
 
 async def save_settings():
-    print_date( "Saving server_settings..." )
+    print_date( "Saving settings..." )
     f = open( 'server_settings.json', 'w+' )
     json.dump( server_settings, f )
     f.close()
-    print_date( "Saved server_settings" )
+    f = open( 'stats.json', 'w+' )
+    json.dump( Stats.get_stat_dict(Stats), f )
+    f.close()
+    print_date( "Saved settings" )
 
 # Attempt to get channel from string
 async def get_channel(ctx, string):
@@ -232,16 +242,16 @@ async def help(ctx):
 async def update():
     await save_settings()
 
-@client.event
-async def on_command_error(ctx,error):
+#@client.event
+#async def on_command_error(ctx,error):
     # Command not found
-    if isinstance(error,commands.errors.CommandNotFound):
-        print_date(error,error=True)
-        await ctx.send('This command does not exist, try `%help` for a list of available commands')
-        return
+#    if isinstance(error,commands.errors.CommandNotFound):
+#        print_date(error,error=True)
+#        await ctx.send('This command does not exist, try `%help` for a list of available commands')
+#        return
     # Every other error
-    print_date('Command error({}):{}'.format(type(error),error),error=True,log=True)
-    await ctx.send(error)
+#    print_date('Command error({}):{}'.format(type(error),error),error=True,log=True)
+#    await ctx.send(error)
 
 # Loading all the cogs
 if __name__ == '__main__':
