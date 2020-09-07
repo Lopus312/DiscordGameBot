@@ -333,16 +333,16 @@ def get_role(g,role):
 async def update():
     await save_settings()
 
-#@client.event
-#async def on_command_error(ctx,error):
-    # Command not found
-#    if isinstance(error,commands.errors.CommandNotFound):
-#        print_date(error,error=True)
-#        await ctx.send('This command does not exist, try `%help` for a list of available commands')
-#        return
-    # Every other error
-#    print_date('Command error({}):{}'.format(type(error),error),error=True,log=True)
-#    await ctx.send(error)
+@client.event
+async def on_command_error(ctx,error):
+    #Command not found
+    if isinstance(error,commands.errors.CommandNotFound):
+        print_date(error,error=True)
+        await ctx.send('This command does not exist, try `%help` for a list of available commands')
+        return
+    #Every other error
+    print_date('Command error({}):{}'.format(type(error),error),error=True,log=True)
+    await ctx.send(error)
 
 def isAdmin(ctx):
     for role in ctx.author.roles:
