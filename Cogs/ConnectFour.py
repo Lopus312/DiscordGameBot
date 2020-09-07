@@ -4,6 +4,7 @@ from discord.ext import commands, tasks
 from discord import User
 from datetime import datetime
 from __main__ import server_settings
+from Cogs.Classes.Stats import Stats
 
 c4_time = 30
 c4_height = 6
@@ -35,13 +36,15 @@ class ConnectFour(commands.Cog):
 
     @commands.command()
     async def surrender(self,ctx):
-        # checking whether this channel is allowed to receive game-related commands
-        if str( ctx.guild.id ) not in server_settings:
-            await main.settings_defaults( ctx.guild.id )
-        elif str(server_settings[str( ctx.guild.id )]["game_channel"]) != str( ctx.channel.id ) and server_settings[str( ctx.guild.id )]["game_channel"] != None:
-            channel = self.client.get_channel( server_settings[str( ctx.guild.id )]["game_channel"] )
-            await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention,channel.mention ) )
-            return
+
+        if str(ctx.guild.id) not in server_settings:
+            await main.settings_defaults(ctx.guild.id)
+        elif ctx.channel.id not in server_settings[str(ctx.guild.id)]["game_channel"] and len(server_settings[str(guild.id)]["game_channel"])>0:
+            # return random channel where game-related commands are allowed
+            channel = self.client.get_channel(server_settings[str(ctx.guild.id)]["game_channel"][random.randint(0,len(server_settings[str(ctx.guild.id)]["game_channel"])-1)])
+            if channel != None:
+                await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention,channel.mention ) )
+                return
 
         # if author already tried to surrender, surrender instantly if not, send surrender message and add him to he list
         if ctx.author.id in surrender_list[0]:
@@ -185,9 +188,8 @@ class ConnectFour(commands.Cog):
                     await message.delete()
 
 
-            except IndexError as e:
-                print_date('IndexError in {}update{} function, will attempt to log to ./ConnectFour_Log.txt: {}'.format('\033[1;31;48m','\033[0;31;48m',e),error=True)
-                write_log(traceback.format_exc())
+            except IndexError:
+                pass
 
     async def surrender_game(self,user_id):
         if user_id not in surrender_list[0]:
@@ -203,8 +205,10 @@ class ConnectFour(commands.Cog):
                 user_b = self.client.get_user(x)
 
         if user_b == None:
-            print_date("User_b not found after surrendering", error=True)
+            main.print_date("Connect Four: User_b not found after surrendering", error=True)
             return
+
+        Stats.surrender(Stats,guild, [user_a,user_b])
 
         await game.msg.edit(content="{} surrendered 🏳️".format( user_a.mention ) )
         await game.msg.channel.send("{} surrendered a game againist {}".format(user_a.mention,user_b.mention))
@@ -212,7 +216,7 @@ class ConnectFour(commands.Cog):
         games[guild.id].pop(user_b.id)
         surrender_list[0].remove( user_id )
         surrender_list[1].remove( guild.id)
-        print_date("{}({}) surrendered game to {}({}) ( {} )".format(user_a.name,user_a.mention,user_b.name,user_b.mention,games))
+        main.print_date("ConnectFour: {}({}) surrendered game to {}({}) ( {} )".format(user_a.name,user_a.mention,user_b.name,user_b.mention,games))
 
     async def create_game(self,ctx,user:User):
 
@@ -220,15 +224,16 @@ class ConnectFour(commands.Cog):
         if user == None:
             await ctx.send("You have to mention someone who you want to play with. \nExample: **%c4 {}**".format(ctx.author.mention))
             return
-
+        print(server_settings)
         global games,timer_messages
         # checking whether this channel is allowed to receive game-related commands
         if str(ctx.guild.id) not in server_settings:
             await main.settings_defaults(ctx.guild.id)
         elif str(server_settings[str(ctx.guild.id)]["game_channel"])!=str(ctx.channel.id) and server_settings[str( ctx.guild.id )]["game_channel"] != None:
             channel = self.client.get_channel(server_settings[str(ctx.guild.id)]["game_channel"])
-            await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention, channel.mention ) )
-            return
+            if channel != None:
+                await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention, channel.mention ) )
+                return
 
         # if either of users is already in game, prevent starting another one
         if ctx.guild.id in games:
@@ -270,29 +275,6 @@ def create_embed():
     embed_desc+=':one::two::three::four::five::six::seven:'
     embed.add_field(name='-', value=embed_desc)
     return embed
-
-# writes log to .\ConnectFour_Log.txt
-def write_log(string,date=True):
-    try:
-        f = open('ConnectFour_Log.txt','a+')
-        if date:
-            f.write(print_date(string,print_=False))
-        else:
-            f.write(string)
-        f.close()
-    except:
-        print_date( 'Unexpected error: Could not write error to log file ({})'.format(string) ,error=True)
-
-# adds date before string and prints it
-# adds date before string and prints it
-def print_date(string,print_=True,error=False):
-    if error:
-        str = '\033[0;31;48m'+datetime.now().strftime("%H:%M:%S")+" "+string+'\033[0;38;48m'
-    else:
-        str = datetime.now().strftime( "%H:%M:%S" ) + " " + string
-    if print_:
-        print(str)
-    return str
 
 def setup(client):
     client.add_cog( ConnectFour( client ) )
@@ -462,19 +444,19 @@ class Game:
         guild = self.msg.guild
         await self.msg.edit( content=":game_die: {} drew against {}".format( self.user_A.mention, self.user_B.mention ) )
         await self.msg.channel.send("{} and {} drew game of Connect Four".format(  self.user_A.mention,  self.user_B.mention ) )
+        Stats.draw( Stats, guild, [self.user_A,self.user_B])
 
         try:
             games[guild.id].pop(self.user_A.id)
             games[guild.id].pop(self.user_B.id)
         except:
-            print_date("Unexpected error inside draw method, check log for more info",error=True)
-            write_log( traceback.format_exc() )
+            main.print_date("ConnectFour: Unexpected error inside draw method, check log for more info",error=True,log=True)
 
     async def win(self,user):
         global games
         #if user is not in this game, he can't win
         if user.id != self.user_A.id and user.id != self.user_B.id:
-            write_log(print_date("{}({}) is trying to win in a game he has not entered: games:{}".format(user,user.id,games), error=True),date=False)
+            main.print_date("ConnectFour: {}({}) is trying to win in a game he has not entered: games:{}".format(user,user.id,games), error=True,log=True)
             return
 
         user_lost = self.user_A if user.id == self.user_B.id else self.user_B
@@ -482,13 +464,11 @@ class Game:
 
         await self.msg.edit(content="{} won 🎉".format( user.mention ) )
         await self.msg.channel.send("{} won against {} in a game of Connect Four".format(user.mention,user_lost.mention))
+        Stats.win(Stats,guild,user,user_lost)
 
         #removing user from games
         try:
             games[guild.id].pop(user.id)
             games[guild.id].pop(user_lost.id)
         except:
-            print_date("Unexpected error inside win method, check log for more info",error=True)
-            write_log( traceback.format_exc() )
-
-        print_date("{}({}) won game of Connect Four against {}({}) games:{}".format(user.name,user.id,user_lost.name,user_lost.id,games))
+            main.print_date("ConnectFour: Unexpected error inside win method, check log for more info",error=True,log=True)
