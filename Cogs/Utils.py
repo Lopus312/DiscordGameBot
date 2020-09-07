@@ -1,4 +1,4 @@
-import discord
+import discord,random
 
 from discord.ext import commands
 
@@ -11,9 +11,9 @@ class Utils(commands.Cog):
     @commands.command(brief='flips a coin', description='Will randomly choose if respond with "head" or "tails"')
     async def flip(self,ctx):
         if random.randint( 0, 1 ) == 1:
-            await ctx.send( 'head' )
+            await ctx.send( 'Head' )
         else:
-            await ctx.send( 'tails' )
+            await ctx.send( 'Tails' )
 
 
 

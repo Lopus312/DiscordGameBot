@@ -10,6 +10,7 @@ players = {}
 # Cogs
 extensions = ['Cogs.Utils','Cogs.ConnectFour',"Cogs.Music","Cogs.Stats"]
 
+
 # Default Settings
 max_purge = 20
 game_channel = "None"
@@ -58,7 +59,7 @@ def print_date(string:str,print_=True,error=False,warning = False,log=False):
 @client.event
 async def on_ready():
     print_date('Logged in as {0.user}'.format( client ),log=True)
-    await client.change_presence(status=discord.Status.online,activity=discord.Game("Raid shadow legends"))
+    await client.change_presence(status=discord.Status.online,activity=discord.Game('Raid shadow legends'))
     update.start()
 
 # removes specified number of messages
@@ -113,8 +114,9 @@ async def save(ctx):
         await save_settings()
         await ctx.send( "Settings force-saved" )
 
+
 # Either shows or edits settings, based on if args are present or not
-@client.command(aliases=["setting"])
+@client.command(aliases=['setting','preferences','prefs','setup'])
 async def settings(ctx,*args):
     if not isAdmin(ctx):
         return
