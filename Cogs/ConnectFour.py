@@ -36,12 +36,12 @@ class ConnectFour(commands.Cog):
 
     @commands.command()
     async def surrender(self,ctx):
-        # checking whether this channel is allowed to receive game-related commands
-        print(server_settings)
-        if str( ctx.guild.id ) not in server_settings:
-            await main.settings_defaults( ctx.guild.id )
-        elif str(server_settings[str( ctx.guild.id )]["game_channel"]) != str( ctx.channel.id ) and server_settings[str( ctx.guild.id )]["game_channel"] != None:
-            channel = self.client.get_channel( server_settings[str( ctx.guild.id )]["game_channel"] )
+
+        if str(ctx.guild.id) not in server_settings:
+            await main.settings_defaults(ctx.guild.id)
+        elif ctx.channel.id not in server_settings[str(ctx.guild.id)]["game_channel"] and len(server_settings[str(guild.id)]["game_channel"])>0:
+            # return random channel where game-related commands are allowed
+            channel = self.client.get_channel(server_settings[str(ctx.guild.id)]["game_channel"][random.randint(0,len(server_settings[str(ctx.guild.id)]["game_channel"])-1)])
             if channel != None:
                 await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention,channel.mention ) )
                 return
@@ -188,9 +188,8 @@ class ConnectFour(commands.Cog):
                     await message.delete()
 
 
-            except IndexError as e:
-                main.print_date('Connect Four: IndexError in {}update{} function, will attempt to log to ./ConnectFour_Log.txt: {}'.format('\033[1;31;48m','\033[0;31;48m',e),error=True)
-                write_log(traceback.format_exc())
+            except IndexError:
+                pass
 
     async def surrender_game(self,user_id):
         if user_id not in surrender_list[0]:
@@ -276,10 +275,6 @@ def create_embed():
     embed_desc+=':one::two::three::four::five::six::seven:'
     embed.add_field(name='-', value=embed_desc)
     return embed
-
-# writes log to .\ConnectFour_Log.txt
-def write_log(string,date=True):
-    main.print_date(string,error=True,log=True)
 
 def setup(client):
     client.add_cog( ConnectFour( client ) )
@@ -455,16 +450,13 @@ class Game:
             games[guild.id].pop(self.user_A.id)
             games[guild.id].pop(self.user_B.id)
         except:
-            main.print_date("ConnectFour: Unexpected error inside draw method, check log for more info",error=True)
-            write_log( traceback.format_exc() )
-
-
+            main.print_date("ConnectFour: Unexpected error inside draw method, check log for more info",error=True,log=True)
 
     async def win(self,user):
         global games
         #if user is not in this game, he can't win
         if user.id != self.user_A.id and user.id != self.user_B.id:
-            write_log(main.print_date("ConnectFour: {}({}) is trying to win in a game he has not entered: games:{}".format(user,user.id,games), error=True),date=False)
+            main.print_date("ConnectFour: {}({}) is trying to win in a game he has not entered: games:{}".format(user,user.id,games), error=True,log=True)
             return
 
         user_lost = self.user_A if user.id == self.user_B.id else self.user_B
@@ -479,7 +471,4 @@ class Game:
             games[guild.id].pop(user.id)
             games[guild.id].pop(user_lost.id)
         except:
-            main.print_date("ConnectFour: Unexpected error inside win method, check log for more info",error=True)
-            write_log( traceback.format_exc() )
-
-        main.print_date("ConnectFour: {}({}) won game of Connect Four against {}({}) games:{}".format(user.name,user.id,user_lost.name,user_lost.id,games))
+            main.print_date("ConnectFour: Unexpected error inside win method, check log for more info",error=True,log=True)

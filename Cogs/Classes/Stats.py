@@ -5,88 +5,117 @@ stat_dict = dict()
 
 class Stats():
 
-    def surrender(self, guild, user):
+    def surrender(self, guild, user, remove=False):
         global stat_dict
-        user_list = self.toList( self, user )
+        # Converting user to list if it is not list, just so we can use it in for loop
+        if type(user) != list:
+            user_list = [user]
+        else:
+            user_list = user
+        # add surrender to each user in list (or remove if remove == True)
         for user_ in user_list:
             self.createDefaults( self, guild, user_ )
-            stat_dict[str( guild.id )][str( user_.id )]["surrenders"] += 1
+            if remove:
+                stat_dict[str( guild.id )][str( user_.id )]["surrenders"] -= 1
+            else:
+                stat_dict[str( guild.id )][str( user_.id )]["surrenders"] += 1
 
-    def draw(self, guild, user):
+    def draw(self, guild, user, remove=False):
         global stat_dict
-        user_list = self.toList( self, user )
-
-        if user_list == None or user2_list == None:
-            main.print_date( "UnhandledType Error: StatEdit.draw(), user_list({}) is not list or Member or User".format(
-                type( user_list ), error=True, log=True ) )
-            return
-
+        if type( user ) != list:
+            user_list = [user]
+        else:
+            user_list = user
         for user_ in user_list:
             self.createDefaults( self, guild, user_ )
-            stat_dict[str( guild.id )][str( user_.id )]["draws"] += 1
-            stat_dict[str( guild.id )][str( user_.id )]["games"] += 1
+            if remove:
+                stat_dict[str( guild.id )][str( user_.id )]["draws"] -= 1
+                stat_dict[str( guild.id )][str( user_.id )]["games"] -= 1
+            else:
+                stat_dict[str( guild.id )][str( user_.id )]["draws"] += 1
+                stat_dict[str( guild.id )][str( user_.id )]["games"] += 1
 
     # user = user who won, user_lost = user who lost (both can be lists), chk_loss = also run loss()
-    def win(self, guild, user, user_lost, chk_loss=True):
+    def win(self, guild, user, user_lost = None, chk_loss=True,remove=False):
         global stat_dict
-        user_list = self.toList(self, user )
-        user_lost_list = self.toList(self, user_lost )
 
-        # User variable type check
-        if user_list == None or user_lost_list == None:
-            main.print_date( "UnhandledType Error: StatEdit.win(), user_list({}) or user_lost_list({}) is not list or Member or User".format( type( user_list ), type( user_lost_list ) ), error=True, log=True )
-            return
+        if type( user ) != list:
+            user_list = [user]
+        else:
+            user_list = user
 
+        if user_lost == None:
+            user_lost_list = None
+        elif type( user_lost ) != list:
+            user_lost_list = [user_lost]
+        else:
+            user_lost_list = user_lost
         # preventing user from winning against himself
-        for user_w in user_list:
-            for user_l in user_lost_list:
-                if user_w.id == user_l.id:
-                    main.print_date( "{}({}) tried to win against himself, removing him from lists...".format( user_w.name, user_w.id ) )
-                    user_list.remove( user_w )
-                    user_lost_list.remove( user_l )
-                    if len( user_list ) == 0:
-                        return
+        if user_lost_list != None:
+            for user_w in user_list:
+                for user_l in user_lost_list:
+                    if user_w.id == user_l.id:
+                        main.print_date( "{}({}) tried to win against himself, removing him from lists...".format( user_w.name, user_w.id ) )
+                        user_list.remove( user_w )
+                        user_lost_list.remove( user_l )
+                        if len( user_list ) == 0:
+                            return
         # Increasing wins and games
         for user_ in user_list:
             self.createDefaults(self, guild, user_ )
-            stat_dict[str( guild.id )][str( user_.id )]["wins"] += 1
-            stat_dict[str( guild.id )][str( user_.id )]["games"] += 1
-
-            for lost_user in user_lost_list:
-                # if user won against user_lost for the first time, add him to "Unique_wins"
-                if lost_user.id not in stat_dict[str( guild.id )][str( user_.id )]["unique_wins"]:
-                    stat_dict[str( guild.id )][str( user_.id )]["unique_wins"].append( lost_user.id )
+            if remove:
+                stat_dict[str( guild.id )][str( user_.id )]["wins"] -= 1
+                stat_dict[str( guild.id )][str( user_.id )]["games"] -= 1
+            else:
+                stat_dict[str( guild.id )][str( user_.id )]["wins"] += 1
+                stat_dict[str( guild.id )][str( user_.id )]["games"] += 1
+            # if user won against user_lost for the first time, add him to "Unique_wins"
+            if user_lost_list!=None:
+                for lost_user in user_lost_list:
+                    if lost_user.id not in stat_dict[str( guild.id )][str( user_.id )]["unique_wins"]:
+                        stat_dict[str( guild.id )][str( user_.id )]["unique_wins"].append( lost_user.id )
 
         if chk_loss:
-            self.loss(self, guild, user_lost_list, user_list, chk_win=False )
+            self.loss(self, guild, user_lost_list, user_list, chk_win=False)
 
     # almost the same as StatEdit.win()
-    def loss(self, guild, user, user_won, chk_win=True):
+    def loss(self, guild, user, user_won = None, chk_win=True,remove = False):
         global stat_dict
-        user_list = self.toList(self, user )
-        user_won_list = self.toList(self, user_won )
 
-        if user_list == None or user_won_list == None:
-            main.print_date("UnhandledType Error: StatEdit.loss(), user_list({}) or user_won_list({}) is not list or Member or User".format( type( user_list ), type( user_won_list ) ), error=True, log=True )
-            return
+        if type( user ) != list:
+            user_list = [user]
+        else:
+            user_list = user
 
-        for user_w in user_list:
-            for user_l in user_won_list:
-                if user_w.id == user_l.id:
-                    main.print_date( "{}({}) tried to lose against himself for some reason, removing him from lists...".format(user_w.name, user_w.id ) )
-                    user_list.remove( user_w )
-                    user_lost_list.remove( user_l )
-                    if len( user_list ) == 0:
-                        return
+        if user_won == None:
+            user_won_list = None
+        elif type( user_won ) != list:
+            user_won_list = [user_won]
+        else:
+            user_won_list = user_won
+
+        if user_won_list != None:
+            for user_w in user_list:
+                for user_l in user_won_list:
+                    if user_w.id == user_l.id:
+                        main.print_date( "{}({}) tried to lose against himself for some reason, removing him from lists...".format(user_w.name, user_w.id ) )
+                        user_list.remove( user_w )
+                        user_lost_list.remove( user_l )
+                        if len( user_list ) == 0:
+                            return
 
         for user_ in user_list:
             self.createDefaults(self, guild, user_ )
-            stat_dict[str( guild.id )][str( user_.id )]["losses"] += 1
-            stat_dict[str( guild.id )][str( user_.id )]["games"] += 1
-
-            for won_user in user_won_list:
-                if won_user.id not in stat_dict[str( guild.id )][str( user_.id )]["unique_losses"]:
-                    stat_dict[str( guild.id )][str( user_.id )]["unique_losses"].append( won_user.id )
+            if remove:
+                stat_dict[str( guild.id )][str( user_.id )]["losses"] -= 1
+                stat_dict[str( guild.id )][str( user_.id )]["games"] -= 1
+            else:
+                stat_dict[str( guild.id )][str( user_.id )]["losses"] += 1
+                stat_dict[str( guild.id )][str( user_.id )]["games"] += 1
+            if user_won_list != None:
+                for won_user in user_won_list:
+                    if won_user.id not in stat_dict[str( guild.id )][str( user_.id )]["unique_losses"]:
+                        stat_dict[str( guild.id )][str( user_.id )]["unique_losses"].append( won_user.id )
 
         if chk_win:
             self.win( guild, user_won_list, user_list, chk_loss=False )

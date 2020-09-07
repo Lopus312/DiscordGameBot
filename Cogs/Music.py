@@ -514,16 +514,13 @@ class Music(commands.Cog):
 
     # Check server_settings if this channel can be used for music commands
     async def check_guild_channel_preference(self, ctx):
-        print(server_settings)
-        print(ctx.channel.id)
         if str( ctx.guild.id ) not in server_settings:
             await main.settings_defaults( ctx.guild.id )
-        elif str(server_settings[str( ctx.guild.id )]["music_channel"]) != str( ctx.channel.id ) and server_settings[str( ctx.guild.id )]["music_channel"]!=None:
-            channel = self.bot.get_channel( server_settings[str( ctx.guild.id )]["music_channel"] )
+        elif ctx.channel.id not in server_settings[str(ctx.guild.id)]["music_channel"] and len(server_settings[str(ctx.guild.id)]["music_channel"])>0:
+            channel = self.bot.get_channel(server_settings[str(ctx.guild.id)]["music_channel"][random.randint(0,len(server_settings[str(ctx.guild.id)]["music_channel"])-1)])
             await ctx.send( "{} this channel can't be used for music-related commands, try {}".format( ctx.author.mention,channel.mention ) )
             return False
         return True
-
     @_join.before_invoke
     @_play.before_invoke
     async def ensure_voice_state(self, ctx: commands.Context):
