@@ -224,15 +224,15 @@ class ConnectFour(commands.Cog):
         if user == None:
             await ctx.send("You have to mention someone who you want to play with. \nExample: **%c4 {}**".format(ctx.author.mention))
             return
-        print(server_settings)
         global games,timer_messages
         # checking whether this channel is allowed to receive game-related commands
         if str(ctx.guild.id) not in server_settings:
             await main.settings_defaults(ctx.guild.id)
-        elif str(server_settings[str(ctx.guild.id)]["game_channel"])!=str(ctx.channel.id) and server_settings[str( ctx.guild.id )]["game_channel"] != None:
-            channel = self.client.get_channel(server_settings[str(ctx.guild.id)]["game_channel"])
+        elif ctx.channel.id not in server_settings[str( ctx.guild.id )]["game_channel"] and len(server_settings[str( guild.id )]["game_channel"] ) > 0:
+            # return random channel where game-related commands are allowed
+            channel = self.client.get_channel( server_settings[str( ctx.guild.id )]["game_channel"][random.randint( 0,len(server_settings[str(ctx.guild.id )]["game_channel"] ) - 1 )] )
             if channel != None:
-                await ctx.send( "{} this channel can't be used for game-related command, try {}".format( ctx.author.mention, channel.mention ) )
+                await ctx.send("{} this channel can't be used for game-related command, try {}".format( ctx.author.mention,channel.mention ) )
                 return
 
         # if either of users is already in game, prevent starting another one
