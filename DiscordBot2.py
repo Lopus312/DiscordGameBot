@@ -191,7 +191,7 @@ async def settings_edit(ctx,arg,value):
             role = get_role(guild_id,value)
             if role != None:
                 server_settings[guild_id]['admin_role'] = role.id
-                await setting_show(ctx)
+                await settings_show(ctx)
         return
     #
     #   Channel settings
