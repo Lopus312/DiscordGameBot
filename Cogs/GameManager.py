@@ -9,7 +9,7 @@ import Utils
 c4 = None
 # Hangoman
 hm = None
-Cogs = ['Cogs.ConnectFour']
+Cogs = ['Cogs.ConnectFour','Cogs.Hangman']
 # Countdown messages
 
 class GameManager(commands.Cog):
@@ -24,7 +24,7 @@ class GameManager(commands.Cog):
 
     @commands.command(aliases=['hm','hangwomen','hw'])
     async def hangman(self,ctx):
-        await ctx.send('Penis')
+        await hm.hangman(ctx)
 
     # Creates invite if both users meet requirements
     @commands.command(aliases=['cfour','connect4','connectfour','connect_four'])
@@ -83,6 +83,7 @@ def setup(client):
     # Getting ConnectFour Cog
     global c4,hm
     c4 = client.get_cog( 'ConnectFour' )
+    hm = client.get_cog( 'Hangman' )
 
 
 
