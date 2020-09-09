@@ -2,13 +2,14 @@ import discord, sys, os, traceback,json, random
 from discord.ext import commands,tasks
 from datetime import datetime
 from Cogs.Classes.Stats import Stats as Stats
+import Utils
 
 client = commands.Bot(command_prefix="%", case_insensitive=True)
 client.remove_command('help')
 players = {}
 
 # Cogs
-extensions = ['Cogs.Utils','Cogs.ConnectFour',"Cogs.Music","Cogs.Stats"]
+extensions = ['Utils',"Cogs.Music","Cogs.Stats",'Cogs.GameManager']
 
 
 # Default Settings
@@ -30,35 +31,10 @@ if os.path.exists("stats.json"):
 else:
     Stats.set_stat_dict(dict())
 
-# adds date to the beginning of message, print = print message to console, error = change text color to red, warning = yellow color, error will be prioritized if both are used, log = will log to DiscordBot2_log.txt
-def print_date(string:str,print_=True,error=False,warning = False,log=False):
-    time = datetime.now().strftime("%H:%M:%S")
-    date = datetime.now().strftime("%d.%m. %H:%M:%S")
-
-    if log:
-        try:
-            f = open( 'DiscordBot2_log.txt', 'a+' )
-            if error:
-                f.write('\n{} {}\nTraceback:{}'.format(date,string,traceback.format_exc()))
-            else:
-                f.write( '\n{} {}'.format( date, string) )
-            f.close()
-        except:
-            print_date('Unexpected error: Could not write error to log file ({})'.format( string ), error=True )
-    if error:
-        str_ = '\033[0;31;48m{} {}\033[0;38;48m'.format(time,string)
-    elif warning:
-        str_ = '\033[0;93;48m{} {}\033[0;38;48m'.format(time,string)
-    else:
-        str_ = '{} {}'.format(time,string)
-    if print_:
-        print(str_)
-    return str_
-
 # message on bot start
 @client.event
 async def on_ready():
-    print_date('Logged in as {0.user}'.format( client ),log=True)
+    Utils.print_date('Logged in as {0.user}'.format( client ),log=True)
     await client.change_presence(status=discord.Status.online,activity=discord.Game('Raid shadow legends'))
     update.start()
 
@@ -74,6 +50,14 @@ async def purge(ctx, amount:int=2):
         await ctx.channel.purge(limit=amount)
     else:
         await ctx.send('You can\'t purge that many message at once!, Maximum is set to **{}**'.format(max_purge))
+
+# flip a coin
+@client.command()
+async def flip(ctx):
+    if random.randint( 0, 1 ) == 1:
+        await ctx.send( 'Head' )
+    else:
+        await ctx.send( 'Tails' )
 
 #Ping-Pong
 @commands.has_permissions(send_messages=True)
@@ -93,7 +77,7 @@ async def help(ctx):
     try:
         helpEmbed.set_author(name=client.user.name,icon_url=client.user.avatar_url)
     except:
-        print_date("Cannot get bot's avatar",error=True)
+        Utils.print_date("Cannot get bot's avatar",error=True)
         helpEmbed.set_author( name=client.user.name, icon_url=discord.Embed.Empty )
 
     helpEmbed.add_field(name=":game_die:Games",value="`connectfour <user mention>` `profile [user]` `uniques [user]` `surrender`")
@@ -110,7 +94,7 @@ async def help(ctx):
 @client.command()
 async def save(ctx):
     if str(ctx.author.id) == '293806543042904068':
-        print_date('Warning: Force-save used guild:{}({}), player:{}({})'.format(ctx.guild.name,ctx.guild.id,ctx.author.name,ctx.author.id),warning=True,log=True)
+        Utils.print_date('Warning: Force-save used guild:{}({}), player:{}({})'.format(ctx.guild.name,ctx.guild.id,ctx.author.name,ctx.author.id),warning=True,log=True)
         await save_settings()
         await ctx.send( "Settings force-saved" )
 
@@ -251,7 +235,7 @@ async def settings_edit(ctx,arg,value):
 
 async def settings_defaults(guild_id):
     if guild_id in server_settings:
-        print_date('Error: settings_defaults was called on guild that is already in settings, settings overwrite prevented',error=True,log=True)
+        Utils.print_date('Error: settings_defaults was called on guild that is already in settings, settings overwrite prevented',error=True,log=True)
         return
     dict_max_purge = dict()
     dict_music_channel = dict()
@@ -270,14 +254,14 @@ async def settings_defaults(guild_id):
     server_settings[str(guild_id)].update(dict_admin_role)
 
 async def save_settings():
-    print_date( "Saving settings..." )
+    Utils.print_date( "Saving settings..." )
     f = open( 'server_settings.json', 'w+' )
     json.dump( server_settings, f )
     f.close()
     f = open( 'stats.json', 'w+' )
     json.dump( Stats.get_stat_dict(Stats), f )
     f.close()
-    print_date( "Saved settings" )
+    Utils.print_date( "Saved settings" )
 
 # Attempt to get channel from string
 async def get_channel(ctx, string):
@@ -307,7 +291,7 @@ def get_role(g,role):
     elif client.get_guild(int(g)) != None:
         guild = client.get_guild(int(g))
     else:
-        print_date('Error: get_role couldn\'t find guild {}.'.format(g),error=True,log=True)
+        Utils.print_date('Error: get_role couldn\'t find guild {}.'.format(g),error=True,log=True)
         return None
 
     for role_ in guild.roles:
@@ -337,11 +321,11 @@ async def update():
 async def on_command_error(ctx,error):
     #Command not found
     if isinstance(error,commands.errors.CommandNotFound):
-        print_date(error,error=True)
+        Utils.print_date(error,error=True)
         await ctx.send('This command does not exist, try `%help` for a list of available commands')
         return
     #Every other error
-    print_date('Command error({}):{}'.format(type(error),error),error=True,log=True)
+    Utils.print_date('Command error({}):{}'.format(type(error),error),error=True,log=True)
     await ctx.send(error)
 
 def isAdmin(ctx):
@@ -357,8 +341,8 @@ if __name__ == '__main__':
     for extension in extensions:
         try:
             client.load_extension(extension)
-            print_date('{} loaded.'.format(extension))
+            Utils.print_date('{} loaded.'.format(extension))
         except Exception as error:
-            print_date(('{} cannot be loaded. [{}]'.format(extension,error)))
+            Utils.print_date(('{} cannot be loaded. [{}]'.format(extension,error)))
 
 client.run(open("TOKEN.txt","r").read())

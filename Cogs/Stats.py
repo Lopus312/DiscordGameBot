@@ -1,5 +1,4 @@
 import discord, random
-import __main__ as main
 from discord.ext import commands
 from discord import User, Member
 from __main__ import server_settings
