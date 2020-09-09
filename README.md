@@ -14,7 +14,8 @@ Multi-functional Discord bot for many things, I use him primarily to learn pytho
 | `flip` | None | Bot will repond with either "Head" or "Tails", there is 50/50 chance on both of them|
 | `profile [user=Sender]` | `stats` `statistics` | Shows stats for specified user |
 | `uniques [user=Sender]` | None | Shows unique players user won/lost against |
-| `statedit <surrender \| draw \| win \| loss> < add \| + \| - \| remove > <user>` | None | Administrator-only. Modifies stat for user |
+| `hangman` | `hm` `hangwomen` `hw` | Creates hangman game for anyone to join |
+| `statedit <surrender \| draw \| win \| loss> < add \| + \| - \| remove > <user>` | None | Administrator-only. Modifies stat for user (ex. "statedit win add @Lopus312" will add one win and game played to lopus312) |
 | `settings` | `preferences` `prefs` `setup` | Administrator-only command. Opens settings menu where you can select which channel will be user for game-commands etc. |
 | `purge [amount=2]` | `delete` | Administrator-only command. Deletes the specified number of messages from channel where this message was sent (default=2)|
 
