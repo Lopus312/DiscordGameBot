@@ -87,7 +87,7 @@ class Stats(commands.Cog):
         embed.set_author(name=user.name,icon_url=user.avatar_url)
         await ctx.send(ctx.author.mention,embed=embed)
 
-    @commands.command(alises=["unique"])
+    @commands.command(aliases=["unique"])
     async def uniques(self,ctx,user:User = None):
         stat_dict = StatEdit.get_stat_dict( StatEdit )
         if user == None:

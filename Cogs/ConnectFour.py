@@ -6,6 +6,7 @@ from datetime import datetime
 from __main__ import server_settings
 import Utils
 from Cogs.Classes.Stats import Stats
+from Cogs.GameManager import GameManager
 
 c4_time = 30
 c4_height = 6
@@ -14,8 +15,7 @@ embed_title = 'Connect Four'
 embed_color = discord.Colour.from_rgb(225,94,235)
 
 games = dict()
-# 0=message, 1=time, 2=challenged player, 3=challenger
-timer_messages = [[],[],[],[]]
+
 game = list()
 surrender_list = [[],[]]
 random.seed(datetime.now())
@@ -25,7 +25,7 @@ class ConnectFour(commands.Cog):
     def __init__(self,client):
         global game
         self.client = client
-        self.timer_messages = timer_messages
+        self.timer_messages = GameManager.get_invite_messages(GameManager)
         self.games = games
         self.cd_time = c4_time
         for x in range( c4_height ):
@@ -40,37 +40,31 @@ class ConnectFour(commands.Cog):
 
         # Rejected game
         if reaction.emoji == '\U0001F6AB':
-            if user.id not in timer_messages[2]:
+            invite_messages = GameManager.get_invite_messages(GameManager)
+            if user.id not in invite_messages[2]:
                 return
-            ix = timer_messages[2].index( user.id )
-            await reaction.message.channel.send('**{}** Has not accepted your challenge {}'.format( self.client.get_user(timer_messages[2][ix]).name, self.client.get_user(timer_messages[3][ix]).mention ))
-            message = timer_messages[0][ix]
-            timer_messages[0].remove( timer_messages[0][ix] )
-            timer_messages[1].remove( timer_messages[1][ix] )
-            timer_messages[2].remove( timer_messages[2][ix] )
-            timer_messages[3].remove( timer_messages[3][ix] )
-            await message.delete()
+            ix = invite_messages[2].index( user.id )
+            await reaction.message.channel.send('**{}** Has not accepted your challenge {}'.format( self.client.get_user(invite_messages[2][ix]).name, self.client.get_user(invite_messages[3][ix]).mention ))
+            await GameManager.invite_remove(GameManager,user.id)
             return
 
         # Accepted game - remove countdown messages and create game
         if reaction.emoji == '\U00002705':
-            if user.id not in timer_messages[2]:
+            invite_messages = GameManager.get_invite_messages(GameManager)
+            if user.id not in invite_messages[2]:
                 return
             global games
             # delete countdown message
-            ix = timer_messages[2].index( user.id )
-            message = timer_messages[0][ix]
-            user_A = self.client.get_user(timer_messages[2][ix])
-            user_B = self.client.get_user(timer_messages[3][ix])
-            timer_messages[0].remove( timer_messages[0][ix] )
-            timer_messages[1].remove( timer_messages[1][ix] )
-            timer_messages[2].remove( timer_messages[2][ix] )
-            timer_messages[3].remove( timer_messages[3][ix] )
+            ix = invite_messages[2].index( user.id )
+            message = invite_messages[0][ix]
+            user_A = self.client.get_user(invite_messages[2][ix])
+            user_B = self.client.get_user(invite_messages[3][ix])
 
             if reaction.message.guild.id in games:
-                if user.id in games[reaction.message.guild.id]:
-                    await ctx.send( "{} You are already in another game".format( user.mention ) )
-                    return
+                if reaction.message.guild.id in games:
+                    if user.id in games[reaction.message.guild.id]:
+                        await reaction.message.channel.send( "{} You are already in another game".format( user.mention ) )
+                        return
 
             #create embed, game and add to games dict
             g_embed = create_embed()
@@ -91,56 +85,64 @@ class ConnectFour(commands.Cog):
                 games[message.guild.id] = games_user_a
                 games[message.guild.id].update(games_user_b)
 
-            await message.delete()
+            await GameManager.invite_remove(GameManager,user.id)
             await game.prepare()
             return
 
         # surrender game
         if reaction.emoji == '\U0000274C':
-            if user.id not in games[reaction.message.guild.id]:
+            if reaction.message.guild.id in games:
+                if user.id not in games[reaction.message.guild.id]:
+                    return
+                if user.id not in surrender_list[0]:
+                    await reaction.message.channel.send("{} Do you really want to surrender game of Connect four? type **%surrender** if you are sure".format(user.mention))
+                    surrender_list[0].append(user.id)
+                    surrender_list[1].append(reaction.message.guild.id)
                 return
-            if user.id not in surrender_list[0]:
-                await reaction.message.channel.send("{} Do you really want to surrender game of Connect four? type **%surrender** if you are sure".format(user.mention))
-                surrender_list[0].append(user.id)
-                surrender_list[1].append(reaction.message.guild.id)
-            return
 
         # 1-7 moves
         if reaction.emoji == '1️⃣':
-            if user.id not in games[reaction.message.guild.id]:
-                return
-            await games[user.guild.id][user.id].play(1,user)
-            await reaction.remove( user )
+            if reaction.message.guild.id in games:
+                if user.id not in games[reaction.message.guild.id]:
+                    return
+                await games[user.guild.id][user.id].play(1,user)
+                await reaction.remove( user )
         if reaction.emoji == '2️⃣':
-            if user.id not in games[reaction.message.guild.id]:
-                return
-            await games[user.guild.id][user.id].play(2,user)
-            await reaction.remove( user )
+            if reaction.message.guild.id in games:
+                if user.id not in games[reaction.message.guild.id]:
+                    return
+                await games[user.guild.id][user.id].play(2,user)
+                await reaction.remove( user )
         if reaction.emoji == '3️⃣':
-            if user.id not in games[reaction.message.guild.id]:
-                return
-            await games[user.guild.id][user.id].play(3,user)
-            await reaction.remove( user )
+            if reaction.message.guild.id in games:
+                if user.id not in games[reaction.message.guild.id]:
+                    return
+                await games[user.guild.id][user.id].play(3,user)
+                await reaction.remove( user )
         if reaction.emoji == '4️⃣':
-            if user.id not in games[reaction.message.guild.id]:
-                return
-            await games[user.guild.id][user.id].play(4,user)
-            await reaction.remove( user )
+            if reaction.message.guild.id in games:
+                if user.id not in games[reaction.message.guild.id]:
+                    return
+                await games[user.guild.id][user.id].play(4,user)
+                await reaction.remove( user )
         if reaction.emoji == '5️⃣':
-            if user.id not in games[reaction.message.guild.id]:
-                return
-            await games[user.guild.id][user.id].play(5,user)
-            await reaction.remove( user )
+            if reaction.message.guild.id in games:
+                if user.id not in games[reaction.message.guild.id]:
+                    return
+                await games[user.guild.id][user.id].play(5,user)
+                await reaction.remove( user )
         if reaction.emoji == '6️⃣':
-            if user.id not in games[reaction.message.guild.id]:
-                return
-            await games[user.guild.id][user.id].play(6,user)
-            await reaction.remove( user )
+            if reaction.message.guild.id in games:
+                if user.id not in games[reaction.message.guild.id]:
+                    return
+                await games[user.guild.id][user.id].play(6,user)
+                await reaction.remove( user )
         if reaction.emoji == '7️⃣':
-            if user.id not in games[reaction.message.guild.id]:
-                return
-            await games[user.guild.id][user.id].play(7,user)
-            await reaction.remove( user )
+            if reaction.message.guild.id in games:
+                if user.id not in games[reaction.message.guild.id]:
+                    return
+                await games[user.guild.id][user.id].play(7,user)
+                await reaction.remove( user )
 
     # Checking if user can surrender or not
     async def surrender(self,ctx):
@@ -169,29 +171,12 @@ class ConnectFour(commands.Cog):
     async def surrender_game(self,user_id):
         if user_id not in surrender_list[0]:
             return
-        user_a = self.client.get_user( user_id )
-        user_b = None
-        guild = self.client.get_guild(surrender_list[1][surrender_list[0].index(user_id)])
+        user = self.client.get_user( user_id )
+        guild_id = surrender_list[1][surrender_list[0].index(user_id)]
         global games
-        game = games[guild.id][user_a.id]
-        # Finding 2nd user
-        for x in games[guild.id]:
-            if game == games[guild.id][x] and x != user_id:
-                user_b = self.client.get_user(x)
+        game = games[guild_id][user.id]
 
-        if user_b == None:
-            Utils.print_date("Connect Four: User_b not found after surrendering", error=True)
-            return
-
-        Stats.surrender(Stats,guild, [user_a,user_b])
-
-        await game.msg.edit(content="{} surrendered 🏳️".format( user_a.mention ) )
-        await game.msg.channel.send("{} surrendered a game againist {}".format(user_a.mention,user_b.mention))
-        games[guild.id].pop(user_a.id)
-        games[guild.id].pop(user_b.id)
-        surrender_list[0].remove( user_id )
-        surrender_list[1].remove( guild.id)
-        Utils.print_date("ConnectFour: {}({}) surrendered game to {}({}) ( {} )".format(user_a.name,user_a.mention,user_b.name,user_b.mention,games))
+        await game.surrender(user)
 
     async def can_i_create_invite(self,ctx,user):
         # If author did not mention user
@@ -210,7 +195,7 @@ class ConnectFour(commands.Cog):
         # Checking if game can start
         if ctx.guild.id in games:
             if ctx.author.id in games[ctx.guild.id]:
-                await ctx.send( ctx.author.mention + ' you are already in game, finish it before starting another one please.' )
+                await ctx.send( ctx.author.mention + ' you are already in game, finish it before starting another one please. If you lost your game type `%findmygame`' )
                 return False
             elif user.id in games[ctx.guild.id]:
                 await ctx.send( user.name + ' is already in game, wait for him to finish before challenging him' )
@@ -218,7 +203,10 @@ class ConnectFour(commands.Cog):
             elif user.bot:
                 await ctx.send('bruh, '+ctx.author.mention+' you can\'t challenge a bot. you\'d be crushed and I can\'t allow you that fast defeat ')
                 return False
-            elif  ctx.author.bot:
+            elif  ctx.author.id == self.client.user.id:
+                    await ctx.send('You dare to challenge me??! You are way too weak, I wont even try')
+                    return False
+            elif  ctx.author.bot and ctx.author.id != self.client.user.id:
                 await ctx.send('Bot aganist player??!, I want to see that')
         if user.id == ctx.author.id:
             await ctx.send('You can\'t play with yourself {}, find a friend'.format(user.mention))
@@ -308,7 +296,8 @@ class Game:
         if move_ == None:
             return
 
-        await self.check_for_win()
+        if await self.check_for_win():
+            return
 
         if self.playing_user == self.user_A.name:
             game_field[move_[0]][move_[1]] = ':yellow_square:'
@@ -350,7 +339,7 @@ class Game:
                         count_horizontal += 1
                         if count_horizontal == 4:
                             await self.win( self.user_A if scanned_players == 1 else self.user_B )
-                            return
+                            return True
                         # Vertical
                         count_vertical += 1
                         vert_next = x + 1 if x + 1 < len( game_field ) else -1
@@ -362,7 +351,7 @@ class Game:
                                     # Vertical win
                                     if count_vertical == 4:
                                         await self.win(self.user_A if scanned_players == 1 else self.user_B)
-                                        return
+                                        return True
                         # Diagonal
                         count_diagonal_to_right = 1
                         count_diagonal_to_left = 1
@@ -379,7 +368,7 @@ class Game:
                                 next_y_r = next_y_r + 1 if next_y_r + 1 < len( game_field[x] ) else -1
                                 if count_diagonal_to_right == 4:
                                     await self.win( self.user_A if scanned_players == 1 else self.user_B )
-                                    return
+                                    return True
                             else:
                                 count_diagonal_to_right = 0
                             # Diagonal right to left <--------
@@ -388,7 +377,7 @@ class Game:
                                 next_y_l = next_y_l - 1 if next_y_l - 1 >= 0 else -1
                                 if count_diagonal_to_left >= 4:
                                     await self.win( self.user_A if scanned_players == 1 else self.user_B )
-                                    return
+                                    return True
                             else:
                                 count_diagonal_to_left = 0
                     else:
@@ -403,11 +392,23 @@ class Game:
                 if game_field[x][y].strip() == ":white_large_square:":
                     return
         await self.draw()
+        return True
 
     async def draw(self):
         guild = self.msg.guild
-        await self.msg.edit( content=":game_die: {} drew against {}".format( self.user_A.mention, self.user_B.mention ) )
+
+        game_field = self.game_field
+        embed_desc = ""
+        for x in range(len(game_field)):
+            for y in range(len(game_field[x])):
+                embed_desc += str(game_field[x][y]).strip()
+            embed_desc += '\n'
+
+        self.embed.set_field_at(0,name=":game_die: {} drew against {}".format(self.user_A.name, self.user_B.name ),value=embed_desc)
+        await self.msg.edit( content=":game_die: {} drew against {}".format( self.user_A.mention, self.user_B.mention ),embed=self.embed )
         await self.msg.channel.send("{} and {} drew game of Connect Four".format(  self.user_A.mention,  self.user_B.mention ) )
+        await self.remove_reactions()
+
         Stats.draw( Stats, guild, [self.user_A,self.user_B])
 
         try:
@@ -426,8 +427,19 @@ class Game:
         user_lost = self.user_A if user.id == self.user_B.id else self.user_B
         guild = self.msg.guild
 
-        await self.msg.edit(content="{} won 🎉".format( user.mention ) )
+        game_field = self.game_field
+        embed_desc = ""
+        for x in range(len(game_field)):
+            for y in range(len(game_field[x])):
+                embed_desc += str(game_field[x][y]).strip()
+            embed_desc += '\n'
+
+        self.embed.set_field_at(0,name="{} won 🎉".format( user.name ),value=embed_desc)
+
+        await self.msg.edit(content="{} won 🎉".format( user.mention ),embed=self.embed)
         await self.msg.channel.send("{} won against {} in a game of Connect Four".format(user.mention,user_lost.mention))
+        await self.remove_reactions()
+
         Stats.win(Stats,guild,user,user_lost)
 
         #removing user from games
@@ -436,3 +448,42 @@ class Game:
             games[guild.id].pop(user_lost.id)
         except:
             Utils.print_date("ConnectFour: Unexpected error inside win method, check log for more info",error=True,log=True)
+
+    async def surrender(self,user):
+        global games
+
+        if user.id != self.user_A.id and user.id != self.user_B.id:
+            Utils.print_date("User tried to draw game he is not member of (user:{})".format(user),warning=True,log=True)
+            return
+
+        user_a = self.user_A if user.id == self.user_A.id else self.user_B
+        user_b = self.user_B if user_a.id == self.user_A.id else self.user_A
+        guild = self.msg.guild
+        game = games[guild.id][user_a.id]
+
+        await self.remove_reactions()
+        Stats.surrender(Stats,guild, [user_a,user_b])
+
+        game_field = self.game_field
+        embed_desc = ""
+        for x in range(len(game_field)):
+            for y in range(len(game_field[x])):
+                embed_desc += str(game_field[x][y]).strip()
+            embed_desc += '\n'
+
+        self.embed.set_field_at(0,name="{} surrendered 🏳️".format( user_a.name ),value=embed_desc)
+        await game.msg.edit(content="{} surrendered 🏳️".format( user_a.mention ),embed=self.embed )
+        await game.msg.channel.send("{} surrendered a game againist {}".format(user_a.mention,user_b.mention))
+
+        await game.remove_reactions()
+        games[guild.id].pop(user_a.id)
+        games[guild.id].pop(user_b.id)
+        surrender_list[0].remove( user.id )
+        surrender_list[1].remove( guild.id)
+        Utils.print_date("ConnectFour: {}({}) surrendered game to {}({}) ( {} )".format(user_a.name,user_a.mention,user_b.name,user_b.mention,games))
+
+    async def remove_reactions(self):
+        msg = await Utils.fetch_message(self.msg.channel,self.msg.id)
+
+        for reaction in msg.reactions:
+            await reaction.clear()

@@ -343,6 +343,6 @@ if __name__ == '__main__':
             client.load_extension(extension)
             Utils.print_date('{} loaded.'.format(extension))
         except Exception as error:
-            Utils.print_date(('{} cannot be loaded. [{}]'.format(extension,error)))
+            Utils.print_date(('{} cannot be loaded. [{}]'.format(extension,error)),error = True)
 
 client.run(open("TOKEN.txt","r").read())

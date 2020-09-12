@@ -1,8 +1,9 @@
 from datetime import datetime
-import discord, traceback
+import discord, traceback,random
 from discord.ext import commands
 
 
+random.seed(datetime.now())
 
 class Utils(commands.Cog):
     pass
@@ -30,6 +31,33 @@ def print_date(string: str, print_=True, error=False, warning=False, log=False):
     if print_:
         print( str_ )
     return str_
+
+async def send_embed(channel,title="",desc="",color = None,name="",value="",text=""):
+    embed = discord.Embed(
+        title=title,
+        description=desc,
+        color = color if color != None else discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255)),
+    )
+    embed.add_field(name=name,value=value,)
+    await channel.send(text,embed=embed)
+
+def random_color():
+    return discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
+
+async def fetch_message(channel,msg_id):
+    try:
+        msg_= await channel.fetch_message(msg_id)
+        return msg_
+    except discord.NotFound:
+        Utils.print_date('discord.NotFound exception: in Utils.fetch_message channel:{}'.format(channel),warning=True)
+        return None
+    except discord.Forbidden:
+        Utils.print_date('discord.Forbidden exception: in Utils.fetch_message, Bot doesn\'t have permissions to get a message'.format(channel),warning=True)
+        return None
+    except discord.HTTPException as e:
+        Utils.print_date('discord.HTTPException: {} in Utils.fetch_message, channel: {}'.format(e,channel),log=True,error=True)
+        return None
+
 
 def setup(client):
     client.add_cog( Utils( client ) )
