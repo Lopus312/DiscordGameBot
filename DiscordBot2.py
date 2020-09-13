@@ -29,7 +29,7 @@ if os.path.exists("stats.json"):
     Stats.set_stat_dict(Stats,json.load(f))
     f.close()
 else:
-    Stats.set_stat_dict(dict())
+    Stats.set_stat_dict(Stats,dict())
 
 # message on bot start
 @client.event
@@ -149,7 +149,7 @@ async def settings_show(ctx):
         description='use `settings [name] [value]` to change values. **Channels** accept either channel id\'s, channel names or if it is text channel, mentions. Emotes in channel names might result in not finding that channel. If that\'s the case, use id instead. **Roles** accept ids, mentions or names',
         color=discord.Colour.blue(),
     )
-    embed.add_field(name='Max_purge = "{}"'.format(server_max_purge),value="Maximum messages that can be removed by `purge` command", inline=False)
+    embed.add_field(name=f'Max_purge = "{server_max_purge}"',value="Maximum messages that can be removed by `purge` command", inline=False)
     embed.add_field(name='Game_channel = "{}"'.format(server_game_channel),value="Channel where bot will accept **Game** related commands. Use *'game_channel_remove' or 'game_channel-'* to remove channel from list also 'gch' can be used instead of 'game_channel' in any command", inline=False)
     embed.add_field(name='Music_channel = "{}"'.format(server_music_channel),value="Channel where bot will accept **Music** related commands. Use *'music_channel_remove' or 'music_channel-'* to remove channel from list also 'mch' can be used instead of 'music_channel' in any command", inline=False)
     embed.add_field(name='Admin_role = "{}"'.format(server_admin_role),value="This role will be able to use administrator-only commands from this bot", inline=False)
@@ -317,12 +317,15 @@ def get_role(g,role):
 async def update():
     await save_settings()
 
-@client.event
+#@client.event
 async def on_command_error(ctx,error):
     #Command not found
     if isinstance(error,commands.errors.CommandNotFound):
         Utils.print_date(error,error=True)
         await ctx.send('This command does not exist, try `%help` for a list of available commands')
+        return
+    elif type(ctx.channel) == discord.DMChannel:
+        await ctx.send('You can\' use commands in Dm\'s')
         return
     #Every other error
     Utils.print_date('Command error({}):{}'.format(type(error),error),error=True,log=True)
@@ -334,8 +337,17 @@ def isAdmin(ctx):
             return True
         elif str(ctx.guild.id) in server_settings and role.id == server_settings[str(ctx.guild.id)]["admin_role"]:
             return True
-
     return False
+
+class NoPrivateMessages(commands.CheckFailure):
+    pass
+
+@client.check
+async def globally_block_dms(ctx):
+    if ctx.guild is None:
+        raise NoPrivateMessages('Command used in Dm\'s')
+    return True
+
 # Loading all the cogs
 if __name__ == '__main__':
     for extension in extensions:

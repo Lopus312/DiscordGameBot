@@ -8,7 +8,10 @@ random.seed(datetime.now())
 class Utils(commands.Cog):
     pass
 
-def print_date(string: str, print_=True, error=False, warning=False, log=False):
+def print_date(string: str, print_=True, error=False, warning=False, log=False,errlog=False):
+    if errlog:
+        error=True
+        log=True
     time = datetime.now().strftime( "%H:%M:%S" )
     date = datetime.now().strftime( "%d.%m. %H:%M:%S" )
 
@@ -32,14 +35,28 @@ def print_date(string: str, print_=True, error=False, warning=False, log=False):
         print( str_ )
     return str_
 
-async def send_embed(channel,title="",desc="",color = None,name="",value="",text=""):
+async def send_embed(channel,title="",desc="",color = None,name="",value="",text="",timestamp=False):
     embed = discord.Embed(
         title=title,
         description=desc,
         color = color if color != None else discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255)),
     )
+    if timestamp:
+        embed.timestamp = datetime.now()
     embed.add_field(name=name,value=value,)
     await channel.send(text,embed=embed)
+
+def get_embed(title="",desc="",color = None,name=None,value=None,text="",timestamp=False):
+    embed = discord.Embed(
+        title=title,
+        description=desc,
+        color = color if color != None else discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255)),
+    )
+    if timestamp:
+        embed.timestamp = datetime.now()
+    if name != None or value != None:
+        embed.add_field(name=name,value=value,)
+    return embed
 
 def random_color():
     return discord.Colour.from_rgb(random.randint(0,255),random.randint(0,255),random.randint(0,255))
@@ -57,7 +74,6 @@ async def fetch_message(channel,msg_id):
     except discord.HTTPException as e:
         Utils.print_date('discord.HTTPException: {} in Utils.fetch_message, channel: {}'.format(e,channel),log=True,error=True)
         return None
-
 
 def setup(client):
     client.add_cog( Utils( client ) )
