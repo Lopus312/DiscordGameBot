@@ -17,7 +17,7 @@ class Hangman(commands.Cog):
         gm = Game(ctx.author)
 
         await gm.setup(ctx.channel)
-        gm.members.append(ctx.author.id)
+        gm.members.append(str(ctx.author.id))
 
         # Save Game
         if ctx.guild.id in games:
@@ -27,8 +27,8 @@ class Hangman(commands.Cog):
             games[ctx.guild.id]['Game'] = gm
 
     async def join(self,ctx):
-        if user not in games[ctx.guild.id]['Game'].members:
-            games[ctx.guild.id]['Game'].members.append(user.id)
+        if str(ctx.author.id) not in games[ctx.guild.id]['Game'].members:
+            games[ctx.guild.id]['Game'].members.append(str(ctx.author.id))
         else:
             await ctx.send(f'{ctx.author.mention} you are already in game')
 
@@ -141,10 +141,14 @@ class Game():
         )
         embed.description = string
 
-        embed.set_image(url='https://i.postimg.cc/CMX6bRPn/Hangman1.png')
+        f = discord.File("Cogs/Hangman/Hangman1.png", filename="Hangman1.png")
+        embed.set_image(url="attachment://Hangman1.png")
+
+        #embed.set_image(url='https://i.postimg.cc/CMX6bRPn/Hangman1.png')
         embed.add_field(name='Players: ',value=self.user.name)
+        await self.message.channel.send(file=f, embed=embed)
         self.embed = embed
-        await self.message.edit(embed=embed)
+        #await self.message.edit(embed=embed)
 
     async def guess(self,letter_):
         # guessed letters are lowercase
@@ -170,7 +174,7 @@ class Game():
             self.embed.description = string.upper()
 
             await self.message.edit(embed=self.embed)
-            await self.embed.edit_field(0,name='Players:',value=' '.join(self.members))
+            self.embed.set_field_at(0,name='Players:',value=' '.join(self.members))
 
             if self.is_end():
                 await self.message.channel.send('u good, u won')

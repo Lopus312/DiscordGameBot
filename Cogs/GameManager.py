@@ -32,6 +32,10 @@ class GameManager(commands.Cog):
     async def guess(self,ctx,arg):
         await hm.guess(ctx,arg)
 
+    @commands.command()
+    async def join_hm(self,ctx):
+        await hm.join(ctx)
+
     # Creates invite if both users meet requirements
     @commands.command(aliases=['cfour','connect4','connectfour','connect_four'])
     async def c4(self, ctx, user: discord.User = None):

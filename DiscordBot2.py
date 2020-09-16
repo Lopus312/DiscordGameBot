@@ -59,6 +59,15 @@ async def flip(ctx):
     else:
         await ctx.send( 'Tails' )
 
+# flip a coin
+@client.command(aliases=['profilepic','profilepicture','profile_picture'])
+async def pp(ctx,user:discord.User=None):
+    if user==None:
+        user = ctx.author
+    embed = Utils.get_embed(title=f'{user.name}\'s Profile picture')
+    embed.set_image(url=user.avatar_url)
+    await ctx.send(ctx.author.mention,embed=embed)
+
 #Ping-Pong
 @commands.has_permissions(send_messages=True)
 @client.command()
@@ -317,7 +326,8 @@ def get_role(g,role):
 async def update():
     await save_settings()
 
-#@client.event
+# https://docs.python.org/3/library/traceback.html#traceback.print_exception
+@client.event
 async def on_command_error(ctx,error):
     #Command not found
     if isinstance(error,commands.errors.CommandNotFound):
