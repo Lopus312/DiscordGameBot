@@ -9,7 +9,7 @@ client.remove_command('help')
 players = {}
 
 # Cogs
-extensions = ['Utils',"Cogs.Music","Cogs.Stats",'Cogs.GameManager']
+extensions = ['Utils',"Cogs.Music","Cogs.Stats",'Cogs.GameManager','Cogs.R6']
 
 
 # Default Settings
@@ -60,7 +60,7 @@ async def flip(ctx):
         await ctx.send( 'Tails' )
 
 # flip a coin
-@client.command(aliases=['profilepic','profilepicture','profile_picture'])
+@client.command(aliases=['profilepic','profilepicture','profile_picture','pfp'])
 async def pp(ctx,user:discord.User=None):
     if user==None:
         user = ctx.author
@@ -91,7 +91,7 @@ async def help(ctx):
 
     helpEmbed.add_field(name=":game_die:Games",value="`connectfour <user mention>` `profile [user]` `uniques [user]` `surrender`")
     helpEmbed.add_field(name=":notes:Music",value="`play <title>` `skip` `queue [page]` `join` `summon [channel]` `leave` `loop` `now` `pause` `resume` `stop` `shuffle` `remove <index>`")
-    helpEmbed.add_field(name=":jigsaw:Other",value="`ping` `flip`")
+    helpEmbed.add_field(name=":jigsaw:Other",value="`ping` `flip` `pfp [user]`")
     helpEmbed.add_field(name="Links",value="[Github](https://github.com/Lopus312/DiscordGameBot) | [Twitter](https://twitter.com/lopus312) | [Bot invite](https://discord.com/api/oauth2/authorize?client_id=679396653815562241&permissions=8&redirect_uri=https%3A%2F%2Fdiscord.gg%2FTgKJQW&scope=bot)")
     helpEmbed.set_footer(text="author: Lopus312")
     # Admin-only commands
@@ -338,8 +338,7 @@ async def on_command_error(ctx,error):
         await ctx.send('You can\' use commands in Dm\'s')
         return
     #Every other error
-    Utils.print_date('Command error({}):{}'.format(type(error),error),error=True,log=True)
-    await ctx.send(error)
+    Utils.print_date(f'Ignoring exception in command {ctx.command}: {traceback.print_exception(type(error), error, error.__traceback__)}')
 
 def isAdmin(ctx):
     for role in ctx.author.roles:

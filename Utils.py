@@ -19,7 +19,7 @@ def print_date(string: str, print_=True, error=False, warning=False, log=False,e
         try:
             f = open( 'DiscordBot2_log.txt', 'a+' )
             if error:
-                f.write( '\n{} {}\nTraceback:{}'.format( date, string, traceback.format_exc() ) )
+                f.write( '\n{} {}\nTraceback:{}'.format( date, string, traceback.print_exc() ) )
             else:
                 f.write( '\n{} {}'.format( date, string ) )
             f.close()
