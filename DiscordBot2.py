@@ -89,7 +89,7 @@ async def help(ctx):
         Utils.print_date("Cannot get bot's avatar",error=True)
         helpEmbed.set_author( name=client.user.name, icon_url=discord.Embed.Empty )
 
-    helpEmbed.add_field(name=":game_die:Games",value="`connectfour <user mention>` `profile [user]` `uniques [user]` `surrender`")
+    helpEmbed.add_field(name=":game_die:Games",value="`connectfour <user mention>` `profile [user]` `uniques [user]` `surrender` `findmygame`")
     helpEmbed.add_field(name=":notes:Music",value="`play <title>` `skip` `queue [page]` `join` `summon [channel]` `leave` `loop` `now` `pause` `resume` `stop` `shuffle` `remove <index>`")
     helpEmbed.add_field(name=":jigsaw:Other",value="`ping` `flip` `pfp [user]`")
     helpEmbed.add_field(name="Links",value="[Github](https://github.com/Lopus312/DiscordGameBot) | [Twitter](https://twitter.com/lopus312) | [Bot invite](https://discord.com/api/oauth2/authorize?client_id=679396653815562241&permissions=8&redirect_uri=https%3A%2F%2Fdiscord.gg%2FTgKJQW&scope=bot)")
@@ -331,13 +331,16 @@ async def update():
 async def on_command_error(ctx,error):
     #Command not found
     if isinstance(error,commands.errors.CommandNotFound):
-        Utils.print_date(error,error=True)
         await ctx.send('This command does not exist, try `%help` for a list of available commands')
+        return
+    elif isinstance(error,commands.errors.CheckFailure):
+        await ctx.send('This command is from extension that is not loaded')
         return
     elif type(ctx.channel) == discord.DMChannel:
         await ctx.send('You can\' use commands in Dm\'s')
         return
     #Every other error
+    Utils.print_date(f'Ignoring exception in command {ctx.command}: {traceback.format_exception(type(error), error, error.__traceback__)}',log=True,print_=False)
     Utils.print_date(f'Ignoring exception in command {ctx.command}: {traceback.print_exception(type(error), error, error.__traceback__)}')
 
 def isAdmin(ctx):

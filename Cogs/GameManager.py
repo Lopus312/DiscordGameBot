@@ -13,6 +13,18 @@ Cogs = ['Cogs.ConnectFour','Cogs.Hangman']
 # Countdown messages
 invite_messages = [[],[],[],[]]
 
+def CogLoaded(cog_name):
+    async def predicate(ctx):
+        return isCogLoaded(ctx.bot,cog_name)
+    return commands.check(predicate)
+
+def isCogLoaded(bot,cog_name):
+    cog = bot.get_cog(cog_name)
+    if cog==None:
+        return False
+    else:
+        return True
+
 class GameManager(commands.Cog):
 
     def __init__(self,client):
@@ -21,23 +33,29 @@ class GameManager(commands.Cog):
         self.invite_messages = invite_messages
 
     @commands.command()
+    @CogLoaded('ConnectFour')
     async def surrender(self,ctx):
         await c4.surrender(ctx)
 
     @commands.command(aliases=['hm','hangwomen','hw'])
+    @CogLoaded('Hangman')
     async def hangman(self,ctx):
         await hm.hangman(ctx)
 
     @commands.command()
+    @CogLoaded('Hangman')
     async def guess(self,ctx,arg):
         await hm.guess(ctx,arg)
 
+    # Join hm game, can specify id of a game to join
     @commands.command()
-    async def join_hm(self,ctx):
-        await hm.join(ctx)
+    @CogLoaded('Hangman')
+    async def join_hm(self,ctx,*args):
+        await hm.join(ctx, args)
 
     # Creates invite if both users meet requirements
     @commands.command(aliases=['cfour','connect4','connectfour','connect_four'])
+    @CogLoaded('ConnectFour')
     async def c4(self, ctx, user: discord.User = None):
 
         if await c4.can_i_create_invite(ctx,user):
@@ -64,44 +82,44 @@ class GameManager(commands.Cog):
 
     @tasks.loop( seconds=1.0 )
     async def update(self):
-        # countdown message
-        # 0=message, 1=time, 2=challenged player, 3=challenger
-        global invite_messages
-        if len(invite_messages[1])>0:
-            for x in range( len( invite_messages[1] ) ):
-                try:
-                    message = invite_messages[0][x]
-                    message_str = message.content.replace( '{}s'.format(invite_messages[1][x]), '{}s'.format(invite_messages[1][x]-1) )
-                    await message.edit( content=message_str )
-                    if invite_messages[1][x] > 1:
-                        invite_messages[1][x] -= 1
-                    else:
+        if isCogLoaded(self.client,'ConnectFour'):
+            # countdown message
+            # 0=message, 1=time, 2=challenged player, 3=challenger
+            global invite_messages
+            if len(invite_messages[1])>0:
+                for x in range( len( invite_messages[1] ) ):
+                    try:
                         message = invite_messages[0][x]
-                        await message.edit( content='{} {} did not accept your invite'.format(self.client.get_user(invite_messages[3][x]).mention,self.client.get_user(invite_messages[2][x]).name))
+                        message_str = message.content.replace( '{}s'.format(invite_messages[1][x]), '{}s'.format(invite_messages[1][x]-1) )
+                        await message.edit( content=message_str )
+                        if invite_messages[1][x] > 1:
+                            invite_messages[1][x] -= 1
+                        else:
+                            message = invite_messages[0][x]
+                            await message.edit( content='{} {} did not accept your invite'.format(self.client.get_user(invite_messages[3][x]).mention,self.client.get_user(invite_messages[2][x]).name))
+                            invite_messages[0].remove( invite_messages[0][x] )
+                            invite_messages[1].remove( invite_messages[1][x] )
+                            invite_messages[2].remove( invite_messages[2][x] )
+                            invite_messages[3].remove( invite_messages[3][x] )
+                    except IndexError:
+                        pass
+                    except discord.errors.NotFound:
+                        Utils.print_date('discord.NotFound Error Handled: Someone most likely removed invite message for c4, removing from message list... \n\tmessage:{}\n\ttime:{}\n\tauthor:{}\n\tplayer:{}'.format(invite_messages[0][x],invite_messages[1][x],invite_messages[2][x],invite_messages[3][x]),warning=True,log=True)
                         invite_messages[0].remove( invite_messages[0][x] )
                         invite_messages[1].remove( invite_messages[1][x] )
                         invite_messages[2].remove( invite_messages[2][x] )
                         invite_messages[3].remove( invite_messages[3][x] )
-                except IndexError:
-                    pass
-                except discord.errors.NotFound:
-                    Utils.print_date('discord.NotFound Error Handled: Someone most likely removed invite message for c4, removing from message list... \n\tmessage:{}\n\ttime:{}\n\tauthor:{}\n\tplayer:{}'.format(invite_messages[0][x],invite_messages[1][x],invite_messages[2][x],invite_messages[3][x]),warning=True,log=True)
-                    invite_messages[0].remove( invite_messages[0][x] )
-                    invite_messages[1].remove( invite_messages[1][x] )
-                    invite_messages[2].remove( invite_messages[2][x] )
-                    invite_messages[3].remove( invite_messages[3][x] )
 
-        # Hangman message waiting for word
-        # 0-user 1-game 2-time
-        hm_messages = hm.waiting_room
-        for time in hm_messages[2]:
-            elapsed = datetime.now() - time
-            if elapsed.seconds > 60:
-                ix = hm_messages[2].index(time)
-                await hm_messages[1][ix].message.edit(embed=Utils.get_embed(title='Hangman',desc='❌ Host didn\'t send word in time (You need to send it in DM\'s)',timestamp=True,color=discord.Color.red()))
-                hm.waiting_room_remove(ix)
-
-
+        if isCogLoaded(self.client,'Hangman'):
+            # Hangman message waiting for word
+            # 0-user 1-game 2-time
+            hm_messages = hm.waiting_room
+            for time in hm_messages[2]:
+                elapsed = datetime.now() - time
+                if elapsed.seconds > 60:
+                    ix = hm_messages[2].index(time)
+                    await hm_messages[1][ix].message.edit(embed=Utils.get_embed(title='Hangman',desc='❌ Host didn\'t send word in time (You need to send it in DM\'s)',timestamp=True,color=discord.Color.red()))
+                    hm.waiting_room_remove(ix)
 
     async def invite_remove(self,user_id):
         ix = invite_messages[2].index( user_id )

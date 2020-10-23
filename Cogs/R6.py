@@ -34,7 +34,7 @@ class R6(commands.Cog):
             if value != "" and value != 0:
                 e.add_field(name=thing,value=value)
         e.description = s
-        await ctx.send("-",embed=e)
+        await ctx.send(embed=e)
 
     # checking whether this channel is allowed to receive game-related commands
     # Returns "True" or "channel" where game-related commands are allowed
