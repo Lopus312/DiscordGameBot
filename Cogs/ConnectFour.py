@@ -149,7 +149,7 @@ class ConnectFour(commands.Cog):
         # Channel checking...
         if str(ctx.guild.id) not in server_settings:
             await main.settings_defaults(ctx.guild.id)
-        elif ctx.channel.id not in server_settings[str(ctx.guild.id)]["game_channel"] and len(server_settings[str(guild.id)]["game_channel"])>0:
+        elif ctx.channel.id not in server_settings[str(ctx.guild.id)]["game_channel"] and len(server_settings[str(ctx.guild.id)]["game_channel"])>0:
             # return random channel where game-related commands are allowed
             channel = self.client.get_channel(server_settings[str(ctx.guild.id)]["game_channel"][random.randint(0,len(server_settings[str(ctx.guild.id)]["game_channel"])-1)])
             if channel != None:
@@ -173,10 +173,9 @@ class ConnectFour(commands.Cog):
             return
         user = self.client.get_user( user_id )
         guild_id = surrender_list[1][surrender_list[0].index(user_id)]
-        global games
-        game = games[guild_id][user.id]
 
-        await game.surrender(user)
+        global games
+        await games[guild_id][user.id].surrender(user)
 
     async def can_i_create_invite(self,ctx,user):
         # If author did not mention user
@@ -240,6 +239,7 @@ class Game:
         self.msg = message
         self.embed = embed
         self.game_field = list()
+        self.winning_four = list()
 
     async def prepare(self):
 
@@ -338,6 +338,7 @@ class Game:
                         # Horizontal
                         count_horizontal += 1
                         if count_horizontal == 4:
+                            self.winning_four = [[x,x,x,x],[y,y-1,y-2,y-3]]
                             await self.win( self.user_A if scanned_players == 1 else self.user_B )
                             return True
                         # Vertical
@@ -350,6 +351,7 @@ class Game:
                                     count_vertical += 1
                                     # Vertical win
                                     if count_vertical == 4:
+                                        self.winning_four = [[x,x+1,x+2,x+3],[y,y,y,y]]
                                         await self.win(self.user_A if scanned_players == 1 else self.user_B)
                                         return True
                         # Diagonal
@@ -367,6 +369,7 @@ class Game:
                                 count_diagonal_to_right += 1
                                 next_y_r = next_y_r + 1 if next_y_r + 1 < len( game_field[x] ) else -1
                                 if count_diagonal_to_right == 4:
+                                    self.winning_four = [[x,x+1,x+2,x+3],[y,y+1,y+2,y+3]]
                                     await self.win( self.user_A if scanned_players == 1 else self.user_B )
                                     return True
                             else:
@@ -376,6 +379,7 @@ class Game:
                                 count_diagonal_to_left += 1
                                 next_y_l = next_y_l - 1 if next_y_l - 1 >= 0 else -1
                                 if count_diagonal_to_left >= 4:
+                                    self.winning_four = [[x,x+1,x+2,x+3],[y,y-1,y-2,y-3]]
                                     await self.win( self.user_A if scanned_players == 1 else self.user_B )
                                     return True
                             else:
@@ -424,10 +428,22 @@ class Game:
             Utils.print_date("ConnectFour: {}({}) is trying to win in a game he has not entered: games:{}".format(user,user.id,games), error=True,log=True)
             return
 
+        game_field = self.game_field
         user_lost = self.user_A if user.id == self.user_B.id else self.user_B
         guild = self.msg.guild
 
-        game_field = self.game_field
+        # highlight winning four
+        if self.winning_four != None:
+            for i in range(0,4):
+                x = self.winning_four[0][i]
+                y = self.winning_four[1][i]
+                print(f'x: {x} y: {y} gf:"{game_field[x][y]}"')
+                if game_field[x][y] == ':red_circle:':
+                    game_field[x][y] = ':red_square:'
+                elif game_field[x][y] == ':yellow_circle:':
+                    game_field[x][y] = ':yellow_square:'
+
+        # Create embed description
         embed_desc = ""
         for x in range(len(game_field)):
             for y in range(len(game_field[x])):
@@ -453,16 +469,16 @@ class Game:
         global games
 
         if user.id != self.user_A.id and user.id != self.user_B.id:
-            Utils.print_date("User tried to draw game he is not member of (user:{})".format(user),warning=True,log=True)
+            Utils.print_date("User tried to surrender game he is not member of (user:{})".format(user),warning=True,log=True)
             return
 
-        user_a = self.user_A if user.id == self.user_A.id else self.user_B
+        user_a = self.user_A if user.id == self.user_A.id else self.user_B      # What is this doing here???
         user_b = self.user_B if user_a.id == self.user_A.id else self.user_A
         guild = self.msg.guild
         game = games[guild.id][user_a.id]
 
         await self.remove_reactions()
-        Stats.surrender(Stats,guild, [user_a,user_b])
+        Stats.surrender(Stats,guild, user_a)
 
         game_field = self.game_field
         embed_desc = ""
