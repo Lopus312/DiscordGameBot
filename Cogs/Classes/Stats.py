@@ -7,7 +7,7 @@ class Stats():
 
     def surrender(self, guild, user, remove=False):
         global stat_dict
-        # Converting user to list if it is not list, just so we can use it in for loop
+        # Converting user to list if it is not list
         if type(user) != list:
             user_list = [user]
         else:

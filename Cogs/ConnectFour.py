@@ -69,7 +69,7 @@ class ConnectFour(commands.Cog):
 
             if reaction.message.guild.id in games:
                 if user.id in games[reaction.message.guild.id]:
-                    await ctx.send( "{} You are already in another game".format( user.mention ) )
+                    await reaction.message.send( "{} You are already in another game".format( user.mention ) )
                     return
 
             #create embed, game and add to games dict
@@ -147,7 +147,7 @@ class ConnectFour(commands.Cog):
         # Channel checking...
         if str(ctx.guild.id) not in server_settings:
             await main.settings_defaults(ctx.guild.id)
-        elif ctx.channel.id not in server_settings[str(ctx.guild.id)]["game_channel"] and len(server_settings[str(guild.id)]["game_channel"])>0:
+        elif ctx.channel.id not in server_settings[str(ctx.guild.id)]["game_channel"] and len(server_settings[str(ctx.guild.id)]["game_channel"])>0:
             # return random channel where game-related commands are allowed
             channel = self.client.get_channel(server_settings[str(ctx.guild.id)]["game_channel"][random.randint(0,len(server_settings[str(ctx.guild.id)]["game_channel"])-1)])
             if channel != None:
@@ -183,7 +183,7 @@ class ConnectFour(commands.Cog):
             Utils.print_date("Connect Four: User_b not found after surrendering", error=True)
             return
 
-        Stats.surrender(Stats,guild, [user_a,user_b])
+        Stats.surrender(Stats,guild, [user_a])
 
         await game.msg.edit(content="{} surrendered 🏳️".format( user_a.mention ) )
         await game.msg.channel.send("{} surrendered a game againist {}".format(user_a.mention,user_b.mention))
@@ -201,7 +201,7 @@ class ConnectFour(commands.Cog):
         # checking whether this channel is allowed to receive game-related commands
         if str(ctx.guild.id) not in server_settings:
             await main.settings_defaults(ctx.guild.id)
-        elif ctx.channel.id not in server_settings[str( ctx.guild.id )]["game_channel"] and len(server_settings[str( guild.id )]["game_channel"] ) > 0:
+        elif ctx.channel.id not in server_settings[str( ctx.guild.id )]["game_channel"] and len(server_settings[str( ctx.guild.id )]["game_channel"] ) > 0:
             # return random channel where game-related commands are allowed
             channel = self.client.get_channel( server_settings[str( ctx.guild.id )]["game_channel"][random.randint( 0,len(server_settings[str(ctx.guild.id )]["game_channel"] ) - 1 )] )
             if channel != None:
