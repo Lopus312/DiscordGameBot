@@ -35,7 +35,7 @@ else:
 @client.event
 async def on_ready():
     Utils.print_date('Logged in as {0.user}'.format( client ),log=True)
-    await client.change_presence(status=discord.Status.online,activity=discord.Game('Raid shadow legends'))
+    await client.change_presence(status=discord.Status.online,activity=discord.Activity(name="No Nut November,type=5))
     update.start()
 
 # removes specified number of messages
