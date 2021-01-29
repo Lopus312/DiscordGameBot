@@ -9,7 +9,7 @@ client.remove_command('help')
 players = {}
 
 # Cogs
-extensions = ['Utils',"Cogs.Music","Cogs.Stats",'Cogs.GameManager']
+extensions = ['Utils',"Cogs.Music","Cogs.Stats",'Cogs.GameManager','Cogs.RoleMsg']
 
 
 # Default Settings
@@ -29,13 +29,13 @@ if os.path.exists("stats.json"):
     Stats.set_stat_dict(Stats,json.load(f))
     f.close()
 else:
-    Stats.set_stat_dict(dict())
+    Stats.set_stat_dict(Stats,dict())
 
 # message on bot start
 @client.event
 async def on_ready():
     Utils.print_date('Logged in as {0.user}'.format( client ),log=True)
-    await client.change_presence(status=discord.Status.online,activity=discord.Game('Raid shadow legends'))
+    await client.change_presence(status=discord.Status.online,activity=discord.Activity(name="Corona Royale",type=5))
     update.start()
 
 # removes specified number of messages
