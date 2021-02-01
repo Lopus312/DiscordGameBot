@@ -9,7 +9,7 @@ client.remove_command('help')
 players = {}
 
 # Cogs
-extensions = ['Utils',"Cogs.Music","Cogs.Stats",'Cogs.GameManager','Cogs.RoleMsg']
+extensions = ['Utils',"Cogs.Stats",'Cogs.GameManager','Cogs.Music','Cogs.RoleMsg']
 
 
 # Default Settings
